@@ -537,6 +537,7 @@ h2.page-title {
   border-radius: 10px;
   padding: 0.3rem 0.3rem 0.4rem;
   min-height: 76px;
+  min-width: 0;
   font-size: 0.62rem;
   line-height: 1.15;
 }
@@ -557,12 +558,15 @@ h2.page-title {
 }
 
 .cal-meal {
+  display: block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   padding: 0.06rem 0 0.06rem 0.3rem;
   border-left: 2px solid transparent;
   margin-bottom: 1px;
+  text-decoration: none;
+  color: inherit;
 }
 
 .cal-meal.breakfast { border-left-color: #E0B23C; }

@@ -48,3 +48,69 @@ function cycle_label(string $start, string $end): string
 
     return $s->format('M j') . ' – ' . $e->format($s->format('M') === $e->format('M') ? 'j' : 'M j');
 }
+
+function get_cycle(PDO $pdo, int $id): ?array
+{
+    $stmt = $pdo->prepare('SELECT * FROM menu_cycles WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    $cycle = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    return $cycle === false ? null : $cycle;
+}
+
+/**
+ * The cycle covering $date, or failing that the soonest upcoming one, or
+ * failing that the most recent past one. Null only if no cycles exist yet.
+ */
+function find_cycle_for_date(PDO $pdo, string $date): ?array
+{
+    $stmt = $pdo->prepare('SELECT * FROM menu_cycles WHERE start_date <= :d AND end_date >= :d LIMIT 1');
+    $stmt->execute([':d' => $date]);
+    $cycle = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($cycle !== false) {
+        return $cycle;
+    }
+
+    $all = $pdo->query('SELECT * FROM menu_cycles ORDER BY start_date')->fetchAll(PDO::FETCH_ASSOC);
+    if (empty($all)) {
+        return null;
+    }
+    foreach ($all as $c) {
+        if ($c['start_date'] >= $date) {
+            return $c;
+        }
+    }
+
+    return end($all);
+}
+
+/** @return int|null the id of the cycle immediately before/after $startDate */
+function adjacent_cycle_id(PDO $pdo, string $startDate, int $direction): ?int
+{
+    $op = $direction < 0 ? '<' : '>';
+    $order = $direction < 0 ? 'DESC' : 'ASC';
+    $stmt = $pdo->prepare("SELECT id FROM menu_cycles WHERE start_date $op :d ORDER BY start_date $order LIMIT 1");
+    $stmt->execute([':d' => $startDate]);
+    $id = $stmt->fetchColumn();
+
+    return $id === false ? null : (int) $id;
+}
+
+/** @return list<list<string>> each element is a Mon-Sun list of Y-m-d dates */
+function cycle_weeks(array $cycle): array
+{
+    $weeks = [];
+    $cursor = new DateTimeImmutable($cycle['start_date']);
+    $end = new DateTimeImmutable($cycle['end_date']);
+
+    while ($cursor <= $end) {
+        $week = [];
+        for ($i = 0; $i < 7 && $cursor <= $end; $i++) {
+            $week[] = $cursor->format('Y-m-d');
+            $cursor = $cursor->modify('+1 day');
+        }
+        $weeks[] = $week;
+    }
+
+    return $weeks;
+}

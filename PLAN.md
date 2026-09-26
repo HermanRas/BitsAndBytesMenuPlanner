@@ -187,20 +187,28 @@ recipe with a real cost total, cooked/favorite toggles persist, and a
 parent can grow the ingredient catalog from either Settings or a recipe.
 
 ### Phase 6 — Calendar & Week Views (dynamic, read-only)
-Wire the month grid and week view to real `menu_cycles`/`menu_entries` data
-with prev/next navigation between cycles.
-**Deliverable:** full cycle is browsable with real DB-backed content.
+Wire the full-cycle grid and week view to real `menu_cycles`/`menu_entries`
+data. Cycle resolution defaults to whichever cycle covers today (falling
+back to the soonest upcoming, then most recent past); `?cycle=` / `?week=`
+navigate explicitly, with week navigation crossing cycle boundaries
+seamlessly when adjacent cycles exist (prev/next disable gracefully at the
+edges when they don't, e.g. with only one seeded cycle). Cooked toggling
+and tap-through to the recipe work in both views, same as Today — only
+adding/reordering meals is out of scope here (Phase 7).
+**Deliverable:** full cycle and week are browsable with real DB-backed
+content; caught and fixed a real bug along the way where full-length meal
+titles overflowed the calendar grid (CSS Grid's `min-width: auto` letting
+`nowrap` text force columns wider than the viewport — the Phase 2 mockup's
+hand-picked short labels had hidden this).
 
-### Phase 7 — Ingredient Catalog & Parent Menu Editing
-Ingredient catalog CRUD first (name, category, unit, price) — this is the
-prerequisite for everything else in this phase. Then: add/edit/delete a meal
-(title, description, ingredients picked from the catalog only, steps, image
-upload), assign meals to a date + slot, guarded to Parent role only.
-Drag-and-drop reorder for meals still marked "not cooked". Saving a cycle's
-menu computes its total estimated cost from `meal_ingredients` and warns if
-it exceeds `budget_settings.monthly_budget`.
-**Deliverable:** a Parent can price ingredients, build a real menu, and gets
-a warning when a cycle goes over budget.
+### Phase 7 — Parent Menu Editing
+Add/edit/delete a meal (title, description, ingredients picked from the
+Phase 5 catalog, steps, image upload), assign meals to a date + slot,
+guarded to Parent role only. Drag-and-drop reorder for meals still marked
+"not cooked". Saving a cycle's menu computes its total estimated cost from
+`meal_ingredients` and warns if it exceeds `budget_settings.monthly_budget`.
+**Deliverable:** a Parent can build a real menu end to end and gets a
+warning when a cycle goes over budget.
 
 ### Phase 8 — Favorites & Search
 Favorite toggle stored per user; search across the meal library by name or
