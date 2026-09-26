@@ -306,9 +306,13 @@ if ($favorites !== null) {
       <a href="copy-cycle.php" class="btn btn-secondary">Copy a Previous Cycle</a>
       <?php endif; ?>
 
+      <?php if ($user !== null): ?>
       <h3 class="section-heading">Feedback</h3>
-      <a href="feedback.html" class="btn btn-secondary member-only">Suggest a new meal</a>
-      <a href="feedback-review.html" class="btn btn-secondary parent-only" style="margin-top:0.6rem;">Review Suggestions</a>
+      <a href="feedback.php" class="btn btn-secondary">Suggest a new meal</a>
+      <?php if ($isParent): ?>
+      <a href="feedback-review.php" class="btn btn-secondary" style="margin-top:0.6rem;">Review Suggestions</a>
+      <?php endif; ?>
+      <?php endif; ?>
 
       <a href="logout.php" class="btn btn-secondary" style="margin-top:2rem; border-color:var(--danger); color:var(--danger); text-align:center;">
         Log Out

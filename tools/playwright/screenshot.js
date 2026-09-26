@@ -12,8 +12,8 @@ const pagesAfterLogin = [
   ["meals", "meals.php"],
   ["meal-form", "meal-form.php"],
   ["ingredients", "ingredients.php"],
-  ["feedback", "feedback.html"],
-  ["feedback-review", "feedback-review.html"],
+  ["feedback", "feedback.php"],
+  ["feedback-review", "feedback-review.php"],
 ];
 
 (async () => {

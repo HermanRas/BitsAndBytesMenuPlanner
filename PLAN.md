@@ -308,9 +308,23 @@ rejected, new one logs in) and confirmed guests/children/parents each see
 the right subset of controls.
 
 ### Phase 12 — Feedback
-Form to suggest a new meal, stored in `feedback`; Parents can review pending
-suggestions and approve (adds to the meal catalog) or dismiss them.
+`feedback.php` (any logged-in family member, not guest): submit a meal
+name + optional note, and see everyone's suggestions with a status badge
+(pending/added/dismissed) so people can avoid re-suggesting the same
+thing. `feedback-review.php` (parent-only) lists pending suggestions
+first, each with submitter name and a relative "N days/weeks ago"
+timestamp; **Approve** inserts a bare stub meal (title only, no
+ingredients/steps yet) and redirects straight into `meal-form.php?id=` so
+the Parent can flesh it out immediately, marking the feedback row
+`added`; **Dismiss** marks it `dismissed`. Both actions are guarded to
+only affect rows still `pending`, so re-submitting an already-resolved
+form (e.g. a double click) is a safe no-op rather than a duplicate meal.
+Settings' Feedback section links are now gated server-side ($isParent /
+$user !== null) instead of the old CSS-class + localStorage role trick.
 **Deliverable:** suggestions round-trip from submission to Parent review.
+Verified with a real Playwright click-through (submit → review → approve
+→ landed on the new stub's edit form) plus curl checks for the
+double-approve guard and guest/child access gating.
 
 ### Phase 13 — PWA Packaging
 `manifest.json`, install-only `service-worker.js` (no offline caching per
