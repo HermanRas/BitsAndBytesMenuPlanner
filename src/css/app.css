@@ -248,8 +248,21 @@ h2.page-title {
   display: flex;
   gap: 0.85rem;
   align-items: center;
+}
+
+.meal-card-link {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
   text-decoration: none;
   color: var(--text);
+}
+
+.cooked-toggle-form,
+.fav-form {
+  flex-shrink: 0;
 }
 
 .meal-card img {

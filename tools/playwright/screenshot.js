@@ -1,14 +1,15 @@
 const { chromium } = require("playwright");
 
 const pagesAfterLogin = [
-  "today.html",
-  "calendar.html",
-  "week.html",
-  "shopping-list.html",
-  "settings.php",
-  "meal-detail.html",
-  "feedback.html",
-  "feedback-review.html",
+  ["today", "today.php"],
+  ["calendar", "calendar.html"],
+  ["week", "week.html"],
+  ["shopping-list", "shopping-list.html"],
+  ["settings", "settings.php"],
+  ["meal-detail", "meal-detail.php?entry=8"],
+  ["ingredients", "ingredients.php"],
+  ["feedback", "feedback.html"],
+  ["feedback-review", "feedback-review.html"],
 ];
 
 (async () => {
@@ -22,13 +23,12 @@ const pagesAfterLogin = [
   await page.fill("#email", "herman.ras.it@gmail.com");
   await page.fill("#pin", "2233");
   await Promise.all([
-    page.waitForURL("**/today.html"),
+    page.waitForURL("**/today.php"),
     page.click('button[value="login"]'),
   ]);
   console.log("captured login.png (logged in as Herman)");
 
-  for (const file of pagesAfterLogin) {
-    const name = file.replace(/\.(html|php)$/, "");
+  for (const [name, file] of pagesAfterLogin) {
     await page.goto(`http://php-server:8000/${file}`, { waitUntil: "networkidle" });
     await page.screenshot({ path: `/screens/${name}.png`, fullPage: true });
     console.log(`captured ${name}.png`);

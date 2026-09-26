@@ -96,7 +96,7 @@ function require_parent(): array
 {
     $user = current_user();
     if ($user === null || $user['role'] !== 'parent') {
-        header('Location: today.html');
+        header('Location: today.php');
         exit;
     }
 

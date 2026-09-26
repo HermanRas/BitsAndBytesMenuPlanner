@@ -172,11 +172,19 @@ guards against removing yourself or the last remaining parent.
 session persists across pages; a parent can add/remove family members from
 Settings.
 
-### Phase 5 — Today View & Meal Detail (dynamic, read-only)
-Replace hardcoded data on the Today and Meal Detail pages with real queries.
-Any logged-in user (not guest) can toggle a meal cooked/not cooked.
-**Deliverable:** today's real menu renders, tapping a meal shows its real
-recipe, cooked toggle persists.
+### Phase 5 — Today View, Meal Detail & Ingredient Catalog
+Replace hardcoded data on the Today and Meal Detail pages with real queries
+(today's cycle/date lookup, per-slot menu entries, real favorite/cooked
+toggles enforced server-side — guest requests are no-ops even if crafted
+directly). A second oversight surfaced during review: there was no page to
+manage the priced ingredient catalog required by the ingredients decision
+in Phase 3. Added `ingredients.php` (parent-only: list by category, "+ Add
+Ingredient" modal for name/category/unit/price, duplicate-name guard), with
+entry points from Settings and from the recipe header.
+**Deliverable:** today's real menu renders (including an honest empty state
+when no cycle covers the current date), tapping a meal shows its real
+recipe with a real cost total, cooked/favorite toggles persist, and a
+parent can grow the ingredient catalog from either Settings or a recipe.
 
 ### Phase 6 — Calendar & Week Views (dynamic, read-only)
 Wire the month grid and week view to real `menu_cycles`/`menu_entries` data
