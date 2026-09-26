@@ -107,11 +107,8 @@ $slotLabel = $hasEntry ? ucfirst($entry['slot']) : null;
 <body>
   <div class="app-shell">
     <header class="app-header">
-      <?php if ($hasEntry): ?>
-        <a href="today.php" class="back-link">
-      <?php else: ?>
-        <a href="search.php" onclick="if (history.length > 1) { history.back(); return false; }" class="back-link">
-      <?php endif; ?>
+      <?php $fallbackBack = $hasEntry ? 'today.php' : 'search.php'; ?>
+      <a href="<?= $fallbackBack ?>" onclick="if (history.length > 1) { history.back(); return false; }" class="back-link">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
         Back
       </a>

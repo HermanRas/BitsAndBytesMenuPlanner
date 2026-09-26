@@ -8,6 +8,6 @@ log_out();
 <html><head><meta charset="utf-8"></head><body>
 <script>
   localStorage.removeItem("bnb-mock-role");
-  location.href = "login.php";
+  location.replace("login.php");
 </script>
 </body></html>

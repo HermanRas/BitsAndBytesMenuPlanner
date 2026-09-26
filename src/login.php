@@ -9,7 +9,7 @@ function bridge_redirect(string $role): never
 <html><head><meta charset="utf-8"></head><body>
 <script>
   localStorage.setItem("bnb-mock-role", <?= json_encode($role) ?>);
-  location.href = "today.php";
+  location.replace("today.php");
 </script>
 </body></html>
     <?php
