@@ -355,6 +355,46 @@ with the right name/icons, and the install button correctly stays hidden
 until `beforeinstallprompt` fires, then prompts and hides again after a
 simulated accept.
 
+### Between phases — real click-through fixes
+Two real bugs surfaced from an actual click-through on a phone (not just
+curl/Playwright), before starting Phase 14:
+
+- **Back button got stuck.** `login.php`/`logout.php`'s "bridge" page (sets
+  `localStorage.bnb-mock-role` then redirects) used `location.href`, which
+  pushes a new history entry on top of itself. Since `login.php` always
+  auto-redirects an already-logged-in session away, landing back on that
+  bridge entry just bounced forward again — back felt broken. Fixed by
+  switching both to `location.replace()`.
+- **`meal-detail.php`'s in-app Back arrow was hardcoded to `today.php`**
+  whenever reached via a scheduled entry (`?entry=`), so tapping Back
+  from a meal found on Calendar or Week sent you to Today instead of
+  back to where you actually were. Now uses `history.back()` with a
+  fallback, matching the search-originated case.
+
+A follow-up question ("how do I edit today's menu?") surfaced a real gap
+and a seed-data artifact:
+
+- **Today had no way to add a meal at all** — parents could only assign
+  meals via Week view. Today now gets the same parent-only "+ Add
+  breakfast/lunch/dinner" (opens a meal-picker `<dialog>`) and a remove
+  (✕) on filled slots, matching Week's pattern (`.slot-line-empty`
+  styling moved from Week's inline `<style>` into `app.css` since it's
+  now shared).
+- Relatedly, `seed.php` only ever created *one* cycle (Sep 28 – Nov 1,
+  matching the sample `Menu.jpg`), so if "today" happened to fall a few
+  days before that (as it did during testing), there was no cycle at
+  all covering today — Today showed an honest "Nothing planned yet" but
+  even the new Add button correctly stays hidden in that case, since
+  there's nowhere valid to attach the entry. Fixed by seeding a second,
+  contiguous, intentionally-empty cycle immediately before it
+  (`generate_cycle(2026, 8)`) so today always falls inside a real cycle
+  in this dev dataset.
+
+Verified with curl (add/remove persist, correctly attach to the cycle
+that actually covers today, child/guest requests are no-ops) and a real
+Playwright click-through (add via the modal, remove via the confirm
+dialog, both confirmed against the database).
+
 ### Phase 14 — Polish & Hardening
 Responsive QA across breakpoints, accessibility pass (contrast, tap target
 size), PIN hashing/security review, input sanitization, empty/error states.

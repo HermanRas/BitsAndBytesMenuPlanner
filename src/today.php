@@ -10,6 +10,12 @@ if ($user === null && !$guest) {
 }
 
 $pdo = get_db();
+$isParent = $user !== null && $user['role'] === 'parent';
+$today = (new DateTimeImmutable('now'))->format('Y-m-d');
+
+$cycleStmt = $pdo->prepare('SELECT id FROM menu_cycles WHERE start_date <= :d AND end_date >= :d LIMIT 1');
+$cycleStmt->execute([':d' => $today]);
+$cycleId = $cycleStmt->fetchColumn();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user !== null) {
     $action = $_POST['action'] ?? '';
@@ -17,6 +23,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user !== null) {
     if ($action === 'toggle_cooked') {
         $entryId = (int) ($_POST['entry_id'] ?? 0);
         $pdo->prepare('UPDATE menu_entries SET cooked = 1 - cooked WHERE id = :id')->execute([':id' => $entryId]);
+    } elseif ($action === 'assign_meal' && $isParent && $cycleId !== false) {
+        $slot = $_POST['slot'] ?? '';
+        $mealId = (int) ($_POST['meal_id'] ?? 0);
+        if (in_array($slot, ['breakfast', 'lunch', 'dinner'], true) && $mealId > 0) {
+            $exists = $pdo->prepare('SELECT 1 FROM menu_entries WHERE date = :d AND slot = :s');
+            $exists->execute([':d' => $today, ':s' => $slot]);
+            if (!$exists->fetchColumn()) {
+                $pdo->prepare('INSERT INTO menu_entries (cycle_id, date, slot, meal_id, cooked) VALUES (:cid, :d, :s, :mid, 0)')
+                    ->execute([':cid' => $cycleId, ':d' => $today, ':s' => $slot, ':mid' => $mealId]);
+            }
+        }
+    } elseif ($action === 'remove_entry' && $isParent) {
+        $entryId = (int) ($_POST['entry_id'] ?? 0);
+        $pdo->prepare('DELETE FROM menu_entries WHERE id = :id')->execute([':id' => $entryId]);
     } elseif ($action === 'toggle_favorite') {
         $mealId = (int) ($_POST['meal_id'] ?? 0);
         $exists = $pdo->prepare('SELECT 1 FROM favorites WHERE user_id = :uid AND meal_id = :mid');
@@ -34,12 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user !== null) {
     exit;
 }
 
-$today = (new DateTimeImmutable('now'))->format('Y-m-d');
 $todayLabel = (new DateTimeImmutable('now'))->format('l, j F');
-
-$cycleStmt = $pdo->prepare('SELECT id FROM menu_cycles WHERE start_date <= :d AND end_date >= :d LIMIT 1');
-$cycleStmt->execute([':d' => $today]);
-$cycleId = $cycleStmt->fetchColumn();
 
 $bySlot = ['breakfast' => null, 'lunch' => null, 'dinner' => null];
 if ($cycleId !== false) {
@@ -63,7 +78,9 @@ if ($user !== null) {
     $favoriteMealIds = array_flip($favStmt->fetchAll(PDO::FETCH_COLUMN));
 }
 
-function render_meal_card(array $entry, array $favoriteMealIds, bool $guest): void
+$allMeals = $isParent ? $pdo->query('SELECT id, title FROM meals ORDER BY title')->fetchAll(PDO::FETCH_ASSOC) : [];
+
+function render_meal_card(array $entry, array $favoriteMealIds, bool $guest, bool $isParent): void
 {
     $favorited = isset($favoriteMealIds[$entry['meal_id']]);
     $cooked = (bool) $entry['cooked'];
@@ -95,6 +112,13 @@ function render_meal_card(array $entry, array $favoriteMealIds, bool $guest): vo
           <button type="submit" class="fav-btn <?= $favorited ? 'active' : '' ?>" aria-label="Favorite">
             <svg viewBox="0 0 24 24" fill="<?= $favorited ? 'currentColor' : 'none' ?>" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5s-7-4.35-9.5-8.8C.8 8.4 2.4 5 5.8 5c1.9 0 3.3 1 4.2 2.4C11 6 12.4 5 14.3 5c3.4 0 5 3.4 3.3 6.7C19 16.15 12 20.5 12 20.5z"/></svg>
           </button>
+        </form>
+      <?php endif; ?>
+      <?php if ($isParent): ?>
+        <form method="post" onsubmit="return confirm('Remove this meal from today?');">
+          <input type="hidden" name="action" value="remove_entry">
+          <input type="hidden" name="entry_id" value="<?= (int) $entry['entry_id'] ?>">
+          <button type="submit" class="remove-btn" aria-label="Remove meal">✕</button>
         </form>
       <?php endif; ?>
     </div>
@@ -136,8 +160,15 @@ function render_meal_card(array $entry, array $favoriteMealIds, bool $guest): vo
           <div class="slot-label"><?= $label ?></div>
           <?php if ($bySlot[$slot] !== null): ?>
             <div style="margin-top:0.5rem;">
-              <?php render_meal_card($bySlot[$slot], $favoriteMealIds, $guest); ?>
+              <?php render_meal_card($bySlot[$slot], $favoriteMealIds, $guest, $isParent); ?>
             </div>
+          <?php elseif ($isParent && $cycleId !== false): ?>
+            <button type="button" class="slot-line-empty" data-slot="<?= $slot ?>" onclick="openAssignModal(this)" style="margin-top:0.5rem;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              Add <?= $slot ?>
+            </button>
+          <?php elseif ($isParent): ?>
+            <p class="hint" style="margin:0.5rem 0 0;">No menu cycle covers today yet.</p>
           <?php else: ?>
             <p class="hint" style="margin:0.5rem 0 0;">Nothing planned yet.</p>
           <?php endif; ?>
@@ -164,6 +195,39 @@ function render_meal_card(array $entry, array $favoriteMealIds, bool $guest): vo
       </a>
     </nav>
   </div>
+
+  <?php if ($isParent): ?>
+  <dialog id="assign-modal">
+    <h3>Add a meal</h3>
+    <p class="hint" id="assign-label" style="margin-top:-0.5rem;"></p>
+    <form method="post">
+      <input type="hidden" name="action" value="assign_meal">
+      <input type="hidden" name="slot" id="assign-slot">
+      <div class="field">
+        <label for="assign-meal">Meal</label>
+        <select id="assign-meal" name="meal_id" required style="width:100%; padding:0.8rem 0.9rem; border-radius:12px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:1rem;">
+          <option value="">Choose a meal…</option>
+          <?php foreach ($allMeals as $m): ?>
+            <option value="<?= (int) $m['id'] ?>"><?= htmlspecialchars($m['title']) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('assign-modal').close()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add</button>
+      </div>
+    </form>
+  </dialog>
+  <script>
+    function openAssignModal(btn) {
+      document.getElementById("assign-slot").value = btn.dataset.slot;
+      document.getElementById("assign-label").textContent = btn.dataset.slot[0].toUpperCase() + btn.dataset.slot.slice(1) + " today";
+      document.getElementById("assign-meal").value = "";
+      document.getElementById("assign-modal").showModal();
+    }
+  </script>
+  <?php endif; ?>
+
   <script src="js/mockup.js"></script>
 </body>
 </html>

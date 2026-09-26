@@ -494,6 +494,26 @@ h2.page-title {
   opacity: 0.6;
 }
 
+.slot-line-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.slot-line-empty svg {
+  width: 16px;
+  height: 16px;
+}
+
 /* Full-cycle calendar grid (spreadsheet-style, mirrors the reference menu) */
 .cal-weekday-row {
   display: grid;

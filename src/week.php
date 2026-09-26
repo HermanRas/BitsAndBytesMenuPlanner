@@ -160,12 +160,6 @@ $weekRange = cycle_label($thisWeek[0], end($thisWeek));
     .slot-line .cooked-mini svg { width: 20px; height: 20px; }
     .slot-line .cooked-mini.done { color: var(--accent-strong); }
     .slot-line form { display: contents; }
-    .slot-line-empty {
-      display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0;
-      color: var(--text-muted); font-size: 0.85rem; background: none; border: none;
-      width: 100%; text-align: left; cursor: pointer; font-family: inherit;
-    }
-    .slot-line-empty svg { width: 16px; height: 16px; }
     .slot-line[draggable="true"] .drag-handle { cursor: grab; color: var(--text-muted); }
     .slot-line[draggable="true"]:active { opacity: 0.5; }
   </style>

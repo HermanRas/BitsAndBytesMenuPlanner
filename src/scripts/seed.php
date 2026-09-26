@@ -316,6 +316,20 @@ foreach ($meals as $title => $meal) {
     }
 }
 
+// --- Previous cycle (empty) -------------------------------------------------
+// Contiguous with the cycle below, purely so "today" always falls inside a
+// real cycle in this dev/demo dataset (whatever today happens to be while
+// this is 2026) rather than a gap before the sample menu's dates start.
+$prevCycle = generate_cycle(2026, 8);
+$insertCycle = $pdo->prepare(
+    'INSERT INTO menu_cycles (start_date, end_date, label) VALUES (:start, :end, :label)'
+);
+$insertCycle->execute([
+    ':start' => $prevCycle['start'],
+    ':end' => $prevCycle['end'],
+    ':label' => cycle_label($prevCycle['start'], $prevCycle['end']),
+]);
+
 // --- Menu cycle + Week 1 entries ------------------------------------------
 $cycle = generate_cycle(2026, 9);
 $insertCycle = $pdo->prepare(
