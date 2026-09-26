@@ -7,6 +7,7 @@ const pagesAfterLogin = [
   ["week", "week.php"],
   ["shopping-list", "shopping-list.php"],
   ["settings", "settings.php"],
+  ["copy-cycle", "copy-cycle.php"],
   ["meal-detail", "meal-detail.php?entry=8"],
   ["meals", "meals.php"],
   ["meal-form", "meal-form.php"],

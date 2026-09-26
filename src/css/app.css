@@ -686,7 +686,8 @@ button.check-item {
   cursor: pointer;
 }
 
-.check-item input[type="checkbox"] {
+.check-item input[type="checkbox"],
+.check-item input[type="radio"] {
   width: 20px;
   height: 20px;
   accent-color: var(--accent-strong);

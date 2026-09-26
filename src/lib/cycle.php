@@ -96,6 +96,24 @@ function adjacent_cycle_id(PDO $pdo, string $startDate, int $direction): ?int
     return $id === false ? null : (int) $id;
 }
 
+/**
+ * The payday date (year/month) whose shopping weekend produced $endDate,
+ * i.e. the "next month" input that generate_cycle() used to compute it.
+ * @return array{year: int, month: int}
+ */
+function payday_month_for_end(string $endDate): array
+{
+    $d = new DateTimeImmutable($endDate);
+    for ($i = 1; $i <= 7; $i++) {
+        $cand = $d->modify("-{$i} day");
+        if ((int) $cand->format('d') === 25) {
+            return ['year' => (int) $cand->format('Y'), 'month' => (int) $cand->format('n')];
+        }
+    }
+
+    throw new RuntimeException("No 25th found near $endDate — cycle end dates should always be within 7 days of a payday.");
+}
+
 /** @return list<list<string>> each element is a Mon-Sun list of Y-m-d dates */
 function cycle_weeks(array $cycle): array
 {

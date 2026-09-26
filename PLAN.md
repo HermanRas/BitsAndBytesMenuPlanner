@@ -263,10 +263,25 @@ aggregation math against a raw DB query and a real Playwright click on the
 checklist (not just curl) round-tripped a check to the database and back.
 
 ### Phase 10 — Copy Cycle
-Parent picks a past cycle to duplicate into a newly generated one (via
-`generate_cycle()`); meals copy over, cooked-status resets to "not cooked".
+`copy-cycle.php` (parent-only, linked from Settings' new "Menu Cycle"
+section). The destination is always the cycle immediately following
+whichever cycle is currently newest in the DB — found via a new
+`payday_month_for_end()` helper that locates the 25th within 7 days of a
+cycle's `end_date` (cycles are contiguous, so this always identifies the
+right next `generate_cycle()` call) — and is created fresh, never
+overwriting an existing one. The Parent picks any past cycle as the
+source; **mapping is by week index, wrapping with modulo**: destination
+week 1 gets source week 1, week 2 gets week 2, and so on, and if the
+destination runs longer than the source (e.g. copying a 4-week cycle into
+a 5-week one) the extra week(s) repeat starting from source week 1 rather
+than staying empty. All copied entries reset to `cooked = 0`.
 **Deliverable:** copy produces a correct new, uncooked menu on the right
-dates.
+dates. Verified with a scripted fixture (4-week source, distinct meal per
+week) copied into a real 5-week destination: weeks 1–4 landed on the
+correct dates and week 5 correctly repeated week 1's meal, all reset to
+not-cooked — plus a real Playwright click-through of the shrinking case
+(5-week seeded cycle copied into a 4-week destination, only week 1 had
+meals so only week 1 populated).
 
 ### Phase 11 — Settings
 Light/dark toggle plus accent-hue slider (writes `users.theme` /
