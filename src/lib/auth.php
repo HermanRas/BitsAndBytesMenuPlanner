@@ -6,9 +6,22 @@ require_once __DIR__ . '/db.php';
 function ensure_session(): void
 {
     if (session_status() === PHP_SESSION_NONE) {
+        session_set_cookie_params([
+            'lifetime' => 0,
+            'path' => '/',
+            'httponly' => true,
+            'samesite' => 'Lax',
+            'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+        ]);
         session_start();
     }
 }
+
+// A pre-computed bcrypt hash of an unused value, so a login attempt against
+// a non-existent email still runs password_verify() (rather than skipping
+// it) and takes the same time as a real one — otherwise response time would
+// leak which emails belong to real family members.
+const DUMMY_PIN_HASH = '$2y$10$Nfu3OXtqp01Jbn5vSd3qc.NvtY5nxVMkNNyHIQPO/92kGjlRTkjy6';
 
 function attempt_login(string $email, string $pin): ?array
 {
@@ -17,7 +30,10 @@ function attempt_login(string $email, string $pin): ?array
     $stmt->execute([':email' => trim($email)]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($user === false || !password_verify($pin, $user['pin_hash'])) {
+    $valid = password_verify($pin, $user !== false ? $user['pin_hash'] : DUMMY_PIN_HASH);
+
+    if ($user === false || !$valid) {
+        usleep(300_000); // slow down PIN brute-forcing
         return null;
     }
 

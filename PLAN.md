@@ -396,9 +396,81 @@ Playwright click-through (add via the modal, remove via the confirm
 dialog, both confirmed against the database).
 
 ### Phase 14 — Polish & Hardening
-Responsive QA across breakpoints, accessibility pass (contrast, tap target
-size), PIN hashing/security review, input sanitization, empty/error states.
-**Deliverable:** v1 ready for real family use.
+A systematic pass, not tied to any one feature:
+
+- **Critical: the live database was directly downloadable.** PHP's
+  built-in server treats the whole `src/` tree as a static webroot, so
+  `/data/family.sqlite` (bcrypt PIN hashes, every family member's email,
+  all meal/budget data), `/lib/schema.sql`, and every `lib/*.php` /
+  `scripts/*.php` source file were servable as plain static files to
+  anyone who requested the URL — `scripts/` had its own CLI-only guard,
+  but `data/` and `lib/` had none. Fixed with a `router.php` front
+  controller (`php -S ... router.php`) that 404s `/lib`, `/scripts`,
+  `/data`, and any `*.sql`/`*.sqlite` path before the built-in server
+  gets a chance to serve them — verified every one now 404s while every
+  real route (`.php` pages, `css/`, `js/`, `img/`, `manifest.json`)
+  still works exactly as before.
+- **Session cookie hardening.** Was using PHP's bare defaults (no
+  `HttpOnly`, no `SameSite`). `ensure_session()` now sets `HttpOnly`,
+  `SameSite=Lax`, and an auto-detected `Secure` flag (on when the
+  request is actually HTTPS, so it doesn't break local plain-HTTP dev)
+  before starting the session.
+- **Login timing/enumeration + brute-force.** `attempt_login()` used to
+  skip `password_verify()` entirely for an unrecognized email (short-
+  circuit on `$user === false`), so response time leaked which emails
+  belonged to real family members. Now always verifies against a
+  pre-computed dummy hash when the email isn't found, and adds a 300ms
+  delay on any failed attempt to slow down PIN brute-forcing.
+- **CSRF / SQL injection review.** Every mutating action is already
+  POST-only (no GET-based state changes) and every query is a
+  parameterized PDO prepared statement — the only string-interpolated
+  SQL is in CLI-only maintenance scripts (`seed.php`/`dump-db.php`)
+  looping over a hardcoded table-name whitelist, never user input.
+  Relying on the new `SameSite=Lax` cookie as proportionate CSRF
+  protection for a private family app rather than adding per-form
+  tokens across every one of the ~15 pages with forms.
+- **File upload review.** `save_meal_image()` already sniffs the real
+  MIME type via `mime_content_type()` (not the client-supplied header),
+  generates a random server-side filename, caps size at 5MB, and only
+  allows JPEG/PNG/WebP — no SVG or executable extensions possible.
+  No changes needed.
+- **Tap targets.** `.icon-btn`, `.fav-btn`, and `.remove-btn` were only
+  ~30–35px effective touch area; bumped all three to a 44×44px minimum
+  (icon size unchanged, just more invisible padding) app-wide. Left
+  Week's intentionally-dense per-slot `.cooked-mini` icons alone (they
+  already clear WCAG's mandatory 24×24px minimum; growing them would
+  meaningfully hurt that page's deliberately compact "week at a glance"
+  layout for a merely-recommended, not required, target size).
+- **Keyboard focus indicators.** `.hue-slider` and `.search-box`'s
+  input both set `outline: none` with no replacement, so tabbing to
+  either showed no visible focus at all. Added a `:focus-visible` ring
+  on the slider thumb and a `:focus-within` highlight on the whole
+  search pill.
+- **Color contrast audit.** Computed WCAG contrast ratios for
+  text-muted against surface/background in both themes: 4.69–6.88:1,
+  comfortably passing AA (4.5:1) in every case. `--border`'s contrast
+  against `--surface` is low (~1.4:1) but it's a decorative/structural
+  boundary, not text — left as-is rather than darkening an already
+  user-approved theme unrequested.
+- **Responsive QA.** Verified no horizontal overflow at 320/768/1280px
+  across Today, Calendar, Shopping List, and Meal Form. Caught a real
+  bug doing this: `.ingredient-row select` lacked `min-width: 0`, so at
+  narrow widths the flex item wouldn't shrink below its content size
+  (a long ingredient name), pushing the Qty input and remove button off
+  the visible screen — the same flexbox `min-width: auto` pitfall as
+  the Phase 6 calendar-grid bug. Fixed the same way.
+- **Empty/error states.** Reviewed Ingredients, Meals, Search, Feedback,
+  Shopping List, and Favorites — all already have sensible empty-state
+  copy from earlier phases. The ingredient catalog can't currently reach
+  empty (there's no delete-ingredient feature, only add/edit), so that
+  edge case is unreachable and wasn't specially handled.
+
+**Deliverable:** v1 ready for real family use. Verified with a full
+Playwright regression pass after every change in this phase (all 14
+pages still render correctly) plus targeted curl/Playwright checks for
+each fix above (blocked paths 404, allowed paths still 200, session
+cookie flags present, login timing/lockout behavior, focus rings
+appearing on tab, no overflow at 320px).
 
 ---
 
@@ -406,7 +478,10 @@ size), PIN hashing/security review, input sanitization, empty/error states.
 
 Following `HappyHubby`'s pattern:
 - `php-server.dockerfile`: `php:8.3-cli-alpine`, `sqlite` package, runs
-  `php -S 0.0.0.0:8000 -t /app`.
+  `php -S 0.0.0.0:8000 -t /app /app/router.php` — the router (Phase 14)
+  blocks `lib/`, `scripts/`, `data/`, and `*.sql`/`*.sqlite` from being
+  served as static files, since the built-in server otherwise treats the
+  entire document root as public.
 - `docker-compose.yml`: single `php-server` service, `./src:/app` volume,
   port mapped to host (e.g. `8080:8000`).
 - No frameworks unless a specific need arises (HappyHubby only pulled in

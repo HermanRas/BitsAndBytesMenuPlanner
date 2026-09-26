@@ -127,6 +127,8 @@ body {
   border: none;
   color: var(--text);
   padding: 0.4rem;
+  min-width: 44px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -322,6 +324,11 @@ h2.page-title {
   color: var(--text-muted);
   cursor: pointer;
   padding: 0.25rem;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
@@ -846,6 +853,16 @@ button.check-item {
   cursor: pointer;
 }
 
+.hue-slider:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+.hue-slider:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
 .section-heading {
   font-weight: 700;
   margin: 1.5rem 0 0.75rem;
@@ -893,6 +910,11 @@ button.check-item {
   font-weight: 700;
   cursor: pointer;
   padding: 0.3rem 0.5rem;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
@@ -966,6 +988,12 @@ dialog#add-member-modal h3 {
   border-radius: 14px;
   padding: 0.7rem 0.9rem;
   margin-bottom: 1rem;
+}
+
+.search-box:focus-within {
+  border-color: var(--accent-strong);
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 1px;
 }
 
 .search-box input {

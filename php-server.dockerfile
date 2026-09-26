@@ -9,6 +9,6 @@ RUN docker-php-ext-install pdo_sqlite
 RUN mkdir /app
 WORKDIR /app
 
-CMD ["php", "-S", "0.0.0.0:8000", "-t", "/app"]
+CMD ["php", "-S", "0.0.0.0:8000", "-t", "/app", "/app/router.php"]
 # Expose the port the app runs on
 EXPOSE 8000

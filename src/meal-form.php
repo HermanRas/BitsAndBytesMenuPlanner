@@ -117,7 +117,7 @@ function ingredient_options(array $all, int $selectedId): string
   <link rel="stylesheet" href="css/app.css">
   <style>
     .ingredient-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
-    .ingredient-row select { flex: 1; padding: 0.7rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+    .ingredient-row select { flex: 1; min-width: 0; padding: 0.7rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
     .ingredient-row input[type="number"] { width: 80px; padding: 0.7rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
     .ingredient-row button { background: none; border: none; color: var(--danger); font-weight: 700; font-size: 1.1rem; cursor: pointer; padding: 0.3rem 0.5rem; }
     .current-image { width: 100%; max-width: 200px; border-radius: 12px; margin-bottom: 0.75rem; display: block; }
