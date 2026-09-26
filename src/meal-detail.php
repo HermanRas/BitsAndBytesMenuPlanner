@@ -10,26 +10,38 @@ if ($user === null && !$guest) {
 }
 
 $pdo = get_db();
-$entryId = (int) ($_GET['entry'] ?? 0);
+$entryId = isset($_GET['entry']) ? (int) $_GET['entry'] : null;
+$mealIdParam = isset($_GET['meal']) ? (int) $_GET['meal'] : null;
 
-$entryStmt = $pdo->prepare(
-    'SELECT me.id AS entry_id, me.slot, me.cooked, me.date, m.*
-     FROM menu_entries me
-     JOIN meals m ON m.id = me.meal_id
-     WHERE me.id = :id'
-);
-$entryStmt->execute([':id' => $entryId]);
-$entry = $entryStmt->fetch(PDO::FETCH_ASSOC);
+if ($entryId !== null) {
+    $stmt = $pdo->prepare(
+        'SELECT me.id AS entry_id, me.slot, me.cooked, me.date, m.*
+         FROM menu_entries me
+         JOIN meals m ON m.id = me.meal_id
+         WHERE me.id = :id'
+    );
+    $stmt->execute([':id' => $entryId]);
+    $entry = $stmt->fetch(PDO::FETCH_ASSOC);
+    $viewUrl = 'meal-detail.php?entry=' . $entryId;
+} elseif ($mealIdParam !== null) {
+    $stmt = $pdo->prepare('SELECT * FROM meals WHERE id = :id');
+    $stmt->execute([':id' => $mealIdParam]);
+    $entry = $stmt->fetch(PDO::FETCH_ASSOC);
+    $viewUrl = 'meal-detail.php?meal=' . $mealIdParam;
+} else {
+    $entry = false;
+}
 
 if ($entry === false) {
     header('Location: today.php');
     exit;
 }
+$hasEntry = $entryId !== null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user !== null) {
     $action = $_POST['action'] ?? '';
 
-    if ($action === 'toggle_cooked') {
+    if ($action === 'toggle_cooked' && $hasEntry) {
         $pdo->prepare('UPDATE menu_entries SET cooked = 1 - cooked WHERE id = :id')->execute([':id' => $entryId]);
     } elseif ($action === 'toggle_favorite') {
         $exists = $pdo->prepare('SELECT 1 FROM favorites WHERE user_id = :uid AND meal_id = :mid');
@@ -43,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user !== null) {
         }
     }
 
-    header('Location: meal-detail.php?entry=' . $entryId);
+    header('Location: ' . $viewUrl);
     exit;
 }
 
@@ -77,8 +89,8 @@ function format_qty(float $qty): string
 }
 
 $steps = json_decode($entry['prep_steps'], true) ?? [];
-$cooked = (bool) $entry['cooked'];
-$slotLabel = ucfirst($entry['slot']);
+$cooked = $hasEntry ? (bool) $entry['cooked'] : false;
+$slotLabel = $hasEntry ? ucfirst($entry['slot']) : null;
 ?>
 <!doctype html>
 <html lang="en">
@@ -92,7 +104,11 @@ $slotLabel = ucfirst($entry['slot']);
 <body>
   <div class="app-shell">
     <header class="app-header">
-      <a href="today.php" class="back-link">
+      <?php if ($hasEntry): ?>
+        <a href="today.php" class="back-link">
+      <?php else: ?>
+        <a href="search.php" onclick="if (history.length > 1) { history.back(); return false; }" class="back-link">
+      <?php endif; ?>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
         Back
       </a>
@@ -120,6 +136,7 @@ $slotLabel = ucfirst($entry['slot']);
         <?php endif; ?>
       </div>
 
+      <?php if ($hasEntry): ?>
       <div class="pill-row">
         <span class="badge badge-not-cooked"><?= htmlspecialchars($slotLabel) ?></span>
         <?php if ($guest): ?>
@@ -136,6 +153,7 @@ $slotLabel = ucfirst($entry['slot']);
           </form>
         <?php endif; ?>
       </div>
+      <?php endif; ?>
 
       <p style="color:var(--text-muted); line-height:1.5;">
         <?= htmlspecialchars($entry['description']) ?>

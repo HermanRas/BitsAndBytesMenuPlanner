@@ -228,9 +228,17 @@ by posting directly). Now it only intercepts the still-static instances
 that aren't wired to a form yet.
 
 ### Phase 8 — Favorites & Search
-Favorite toggle stored per user; search across the meal library by name or
-ingredient.
-**Deliverable:** search returns matching meals; favorites list works.
+Favorite toggling itself already existed (Phase 5) but had nowhere to
+browse from outside a scheduled day. Added `search.php` — by title or
+ingredient (empty query browses the whole library), reachable via a new
+search icon on Today — and extended `meal-detail.php` to open a meal
+library-wide (`?meal=ID`, no date/slot/cooked context) alongside its
+existing per-occurrence view (`?entry=ID`). Settings' favorites section,
+static since Phase 2, is now a real per-user list with working remove.
+**Deliverable:** search returns matching meals by name or ingredient,
+guests can browse read-only, and the favorites list in Settings reflects
+and edits real data. Verified with a real Playwright search-then-favorite
+click-through, not just curl.
 
 ### Phase 9 — Shopping List
 Select a cycle (or custom date range), aggregate ingredients grouped by

@@ -2,6 +2,7 @@ const { chromium } = require("playwright");
 
 const pagesAfterLogin = [
   ["today", "today.php"],
+  ["search", "search.php"],
   ["calendar", "calendar.php"],
   ["week", "week.php"],
   ["shopping-list", "shopping-list.html"],

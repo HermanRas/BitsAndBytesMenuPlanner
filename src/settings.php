@@ -69,9 +69,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isParent) {
     }
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user !== null && ($_POST['action'] ?? '') === 'remove_favorite') {
+    get_db()->prepare('DELETE FROM favorites WHERE user_id = :uid AND meal_id = :mid')
+        ->execute([':uid' => $user['id'], ':mid' => (int) ($_POST['meal_id'] ?? 0)]);
+    header('Location: settings.php');
+    exit;
+}
+
 $members = $isParent
     ? get_db()->query('SELECT id, name, email, role FROM users ORDER BY role, name')->fetchAll(PDO::FETCH_ASSOC)
     : [];
+
+$favorites = $user !== null
+    ? get_db()->prepare('SELECT m.id, m.title, m.image FROM favorites f JOIN meals m ON m.id = f.meal_id WHERE f.user_id = :uid ORDER BY m.title')
+    : null;
+if ($favorites !== null) {
+    $favorites->execute([':uid' => $user['id']]);
+    $favorites = $favorites->fetchAll(PDO::FETCH_ASSOC);
+} else {
+    $favorites = [];
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -133,21 +150,27 @@ $members = $isParent
       </div>
       <button class="btn btn-secondary">Save budget</button>
 
+      <?php if ($user !== null): ?>
       <h3 class="section-heading">Favorite meals</h3>
-      <div class="fav-list-item">
-        <img src="img/Icon_256x256.png" alt="">
-        <span class="name">Beef Burgers, Pineapple &amp; Chips</span>
-        <button class="fav-btn active" aria-label="Remove favorite">
-          <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5s-7-4.35-9.5-8.8C.8 8.4 2.4 5 5.8 5c1.9 0 3.3 1 4.2 2.4C11 6 12.4 5 14.3 5c3.4 0 5 3.4 3.3 6.7C19 16.15 12 20.5 12 20.5z"/></svg>
-        </button>
-      </div>
-      <div class="fav-list-item">
-        <img src="img/Icon_256x256.png" alt="">
-        <span class="name">Homemade Pizzas</span>
-        <button class="fav-btn active" aria-label="Remove favorite">
-          <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5s-7-4.35-9.5-8.8C.8 8.4 2.4 5 5.8 5c1.9 0 3.3 1 4.2 2.4C11 6 12.4 5 14.3 5c3.4 0 5 3.4 3.3 6.7C19 16.15 12 20.5 12 20.5z"/></svg>
-        </button>
-      </div>
+      <?php if (empty($favorites)): ?>
+        <p class="hint">No favorites yet — tap the heart on any meal to save it here.</p>
+      <?php endif; ?>
+      <?php foreach ($favorites as $fav): ?>
+        <div class="fav-list-item">
+          <a href="meal-detail.php?meal=<?= (int) $fav['id'] ?>" style="display:contents;">
+            <img src="<?= htmlspecialchars($fav['image'] ?: 'img/Icon_256x256.png') ?>" alt="">
+            <span class="name" style="color:var(--text);"><?= htmlspecialchars($fav['title']) ?></span>
+          </a>
+          <form method="post">
+            <input type="hidden" name="action" value="remove_favorite">
+            <input type="hidden" name="meal_id" value="<?= (int) $fav['id'] ?>">
+            <button type="submit" class="fav-btn active" aria-label="Remove favorite">
+              <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5s-7-4.35-9.5-8.8C.8 8.4 2.4 5 5.8 5c1.9 0 3.3 1 4.2 2.4C11 6 12.4 5 14.3 5c3.4 0 5 3.4 3.3 6.7C19 16.15 12 20.5 12 20.5z"/></svg>
+            </button>
+          </form>
+        </div>
+      <?php endforeach; ?>
+      <?php endif; ?>
 
       <?php if ($isParent): ?>
       <h3 class="section-heading">Family Members</h3>
