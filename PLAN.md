@@ -202,13 +202,30 @@ titles overflowed the calendar grid (CSS Grid's `min-width: auto` letting
 hand-picked short labels had hidden this).
 
 ### Phase 7 — Parent Menu Editing
-Add/edit/delete a meal (title, description, ingredients picked from the
-Phase 5 catalog, steps, image upload), assign meals to a date + slot,
-guarded to Parent role only. Drag-and-drop reorder for meals still marked
-"not cooked". Saving a cycle's menu computes its total estimated cost from
-`meal_ingredients` and warns if it exceeds `budget_settings.monthly_budget`.
-**Deliverable:** a Parent can build a real menu end to end and gets a
-warning when a cycle goes over budget.
+`meals.php` (library, parent-only) + `meal-form.php` (shared add/edit: title,
+description, ingredients picked from the Phase 5 catalog via dynamic rows,
+one-step-per-line prep steps, optional photo upload to `img/meals/`).
+Delete is blocked with a clear message if the meal is still scheduled
+anywhere. On `week.php`, empty slots get a parent-only "+ Add" that opens a
+meal picker; filled slots get a remove (✕); real HTML5 drag-and-drop moves
+or swaps meals between date+slot, blocked server-side whenever either the
+dragged or the target entry is `cooked`. A live budget banner (reused on
+`calendar.php` too) sums `qty × estimated_price` across every entry in the
+cycle — including repeats of the same meal — against
+`budget_settings.monthly_budget` and warns when over, updating immediately
+after every edit rather than waiting for a single "save".
+**Deliverable:** a Parent can build a real menu end to end (add meals,
+schedule them, rearrange by dragging) and sees a live warning when a
+cycle goes over budget. Verified with real ingredient math, a real
+browser drag gesture, and the cooked-meal lock in both directions.
+
+Also fixed a real, previously-undetected bug from Phase 5: `mockup.js`'s
+global `.fav-btn` click handler called `preventDefault()` on every such
+button, including the real `type="submit"` ones added in `today.php` /
+`meal-detail.php` — so a genuine browser click never actually reached the
+server (curl-based verification during Phase 5 had bypassed this entirely
+by posting directly). Now it only intercepts the still-static instances
+that aren't wired to a form yet.
 
 ### Phase 8 — Favorites & Search
 Favorite toggle stored per user; search across the meal library by name or

@@ -7,6 +7,8 @@ const pagesAfterLogin = [
   ["shopping-list", "shopping-list.html"],
   ["settings", "settings.php"],
   ["meal-detail", "meal-detail.php?entry=8"],
+  ["meals", "meals.php"],
+  ["meal-form", "meal-form.php"],
   ["ingredients", "ingredients.php"],
   ["feedback", "feedback.html"],
   ["feedback-review", "feedback-review.html"],

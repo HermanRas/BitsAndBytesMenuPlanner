@@ -204,8 +204,9 @@ $members = $isParent
       <?php endif; ?>
 
       <?php if ($isParent): ?>
-      <h3 class="section-heading">Ingredients</h3>
-      <a href="ingredients.php" class="btn btn-secondary">Manage Ingredients</a>
+      <h3 class="section-heading">Meals &amp; Ingredients</h3>
+      <a href="meals.php" class="btn btn-secondary">Manage Meals</a>
+      <a href="ingredients.php" class="btn btn-secondary" style="margin-top:0.6rem;">Manage Ingredients</a>
       <?php endif; ?>
 
       <h3 class="section-heading">Feedback</h3>

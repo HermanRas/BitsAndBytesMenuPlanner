@@ -39,6 +39,20 @@ foreach ($entriesStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
 
 $weeks = cycle_weeks($cycle);
 $range = cycle_label($cycle['start_date'], $cycle['end_date']);
+
+$budget = $pdo->query('SELECT monthly_budget FROM budget_settings WHERE id = 1')->fetchColumn();
+$costStmt = $pdo->prepare(
+    'SELECT COALESCE(SUM(mi.qty * i.estimated_price), 0)
+     FROM menu_entries me
+     JOIN meal_ingredients mi ON mi.meal_id = me.meal_id
+     JOIN ingredients i ON i.id = mi.ingredient_id
+     WHERE me.cycle_id = :cid'
+);
+$costStmt->execute([':cid' => $cycle['id']]);
+$cycleCost = (float) $costStmt->fetchColumn();
+$budget = $budget !== false ? (float) $budget : null;
+$overBudget = $budget !== null && $cycleCost > $budget;
+$budgetPct = $budget !== null && $budget > 0 ? min(100, ($cycleCost / $budget) * 100) : 0;
 ?>
 <!doctype html>
 <html lang="en">
@@ -60,6 +74,20 @@ $range = cycle_label($cycle['start_date'], $cycle['end_date']);
     </header>
 
     <main class="app-content">
+      <?php if ($budget !== null): ?>
+        <div class="budget-card">
+          <div class="row"><span>Cycle estimated cost</span><span>R<?= number_format($cycleCost, 2) ?></span></div>
+          <div class="progress-track">
+            <div class="progress-fill <?= $overBudget ? 'over-budget' : '' ?>" style="width:<?= $budgetPct ?>%;"></div>
+          </div>
+          <?php if ($overBudget): ?>
+            <p class="budget-note">⚠ R<?= number_format($cycleCost - $budget, 2) ?> over your R<?= number_format($budget, 2) ?> monthly budget.</p>
+          <?php else: ?>
+            <p class="budget-note">Budget: R<?= number_format($budget, 2) ?></p>
+          <?php endif; ?>
+        </div>
+      <?php endif; ?>
+
       <div class="view-toggle">
         <a href="calendar.php?cycle=<?= (int) $cycle['id'] ?>" class="active">Full cycle</a>
         <a href="week.php?cycle=<?= (int) $cycle['id'] ?>">Week</a>

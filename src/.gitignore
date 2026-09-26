@@ -1,1 +1,3 @@
 data/*.sqlite
+img/meals/*
+!img/meals/.gitkeep

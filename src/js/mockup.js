@@ -52,7 +52,12 @@
     });
   });
 
+  // Only the still-static, not-yet-wired fav-btn instances (e.g. the
+  // Settings favorites list, pending Phase 11) get the fake client-only
+  // toggle. Real ones are type="submit" inside a <form> that must be left
+  // to actually hit the server.
   document.querySelectorAll(".fav-btn").forEach((btn) => {
+    if (btn.closest("form")) return;
     btn.addEventListener("click", (e) => {
       e.preventDefault();
       btn.classList.toggle("active");
@@ -61,43 +66,9 @@
     });
   });
 
-  document.querySelectorAll("[data-cooked-toggle]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const cooked = btn.getAttribute("data-cooked-toggle") !== "cooked";
-      btn.setAttribute("data-cooked-toggle", cooked ? "cooked" : "not-cooked");
-      btn.classList.toggle("badge-cooked", cooked);
-      btn.classList.toggle("badge-not-cooked", !cooked);
-      btn.querySelector(".label").textContent = cooked ? "Cooked" : "Not cooked";
-    });
-  });
-
   document.querySelectorAll(".check-item input[type=checkbox]").forEach((box) => {
     box.addEventListener("change", () => {
       box.closest(".check-item").classList.toggle("checked", box.checked);
-    });
-  });
-
-  // Drag-and-drop reorder preview for "not cooked" meals in the week view.
-  let dragged = null;
-  document.querySelectorAll(".slot-line[draggable='true']").forEach((row) => {
-    row.addEventListener("dragstart", () => {
-      dragged = row;
-      row.style.opacity = "0.4";
-    });
-    row.addEventListener("dragend", () => {
-      row.style.opacity = "1";
-    });
-    row.addEventListener("dragover", (e) => e.preventDefault());
-    row.addEventListener("drop", (e) => {
-      e.preventDefault();
-      if (!dragged || dragged === row) return;
-      const parent = row.parentElement;
-      const rows = Array.from(parent.querySelectorAll(".slot-line[draggable='true']"));
-      if (rows.indexOf(dragged) < rows.indexOf(row)) {
-        row.after(dragged);
-      } else {
-        row.before(dragged);
-      }
     });
   });
 })();

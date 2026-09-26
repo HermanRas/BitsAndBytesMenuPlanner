@@ -100,13 +100,13 @@ $slotLabel = ucfirst($entry['slot']);
       <a href="ingredients.php" class="icon-btn parent-only" aria-label="Manage Ingredients" title="Manage Ingredients">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
       </a>
-      <button class="icon-btn parent-only" aria-label="Edit meal">
+      <a class="icon-btn parent-only" href="meal-form.php?id=<?= (int) $entry['id'] ?>" aria-label="Edit meal">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-      </button>
+      </a>
     </header>
 
     <main class="app-content">
-      <img class="hero-image" src="img/Icon_1024x1024.png" alt="">
+      <img class="hero-image" src="<?= htmlspecialchars($entry['image'] ?: 'img/Icon_1024x1024.png') ?>" alt="">
 
       <div style="display:flex; align-items:flex-start; gap:0.75rem;">
         <h2 class="page-title" style="flex:1; margin-bottom:0.25rem;"><?= htmlspecialchars($entry['title']) ?></h2>

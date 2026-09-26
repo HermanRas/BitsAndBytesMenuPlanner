@@ -44,7 +44,7 @@ $cycleId = $cycleStmt->fetchColumn();
 $bySlot = ['breakfast' => null, 'lunch' => null, 'dinner' => null];
 if ($cycleId !== false) {
     $entriesStmt = $pdo->prepare(
-        "SELECT me.id AS entry_id, me.slot, me.cooked, m.id AS meal_id, m.title
+        "SELECT me.id AS entry_id, me.slot, me.cooked, m.id AS meal_id, m.title, m.image
          FROM menu_entries me
          JOIN meals m ON m.id = me.meal_id
          WHERE me.cycle_id = :cid AND me.date = :d
@@ -63,14 +63,14 @@ if ($user !== null) {
     $favoriteMealIds = array_flip($favStmt->fetchAll(PDO::FETCH_COLUMN));
 }
 
-function render_meal_card(array $entry, array $favoriteMealIds, ?array $user, bool $guest): void
+function render_meal_card(array $entry, array $favoriteMealIds, bool $guest): void
 {
     $favorited = isset($favoriteMealIds[$entry['meal_id']]);
     $cooked = (bool) $entry['cooked'];
     ?>
     <div class="meal-card">
       <a href="meal-detail.php?entry=<?= (int) $entry['entry_id'] ?>" class="meal-card-link">
-        <img src="img/Icon_256x256.png" alt="">
+        <img src="<?= htmlspecialchars($entry['image'] ?: 'img/Icon_256x256.png') ?>" alt="">
         <div class="meal-info">
           <div class="meal-title"><?= htmlspecialchars($entry['title']) ?></div>
           <?php if ($guest): ?>
@@ -129,7 +129,7 @@ function render_meal_card(array $entry, array $favoriteMealIds, ?array $user, bo
           <div class="slot-label"><?= $label ?></div>
           <?php if ($bySlot[$slot] !== null): ?>
             <div style="margin-top:0.5rem;">
-              <?php render_meal_card($bySlot[$slot], $favoriteMealIds, $user, $guest); ?>
+              <?php render_meal_card($bySlot[$slot], $favoriteMealIds, $guest); ?>
             </div>
           <?php else: ?>
             <p class="hint" style="margin:0.5rem 0 0;">Nothing planned yet.</p>
