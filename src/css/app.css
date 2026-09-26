@@ -674,6 +674,14 @@ h2.page-title {
   margin-bottom: 0.5rem;
 }
 
+button.check-item {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
 .check-item input[type="checkbox"] {
   width: 20px;
   height: 20px;
