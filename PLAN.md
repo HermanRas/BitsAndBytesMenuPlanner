@@ -41,8 +41,8 @@ guaranteed accurate. Treat them as flavor, not spec.
   cooked-status reset) into a new cycle.
 - **Auth**: PIN + email login for family members; a **Guest** button gives
   read-only access to the menu and recipes with no login.
-- **Settings**: color theme, icon, PIN code, monthly budget, and favorite
-  meals management.
+- **Settings**: color theme (light/dark + a per-user accent hue), PIN code,
+  monthly budget, and favorite meals management.
 - **Feedback**: simple form for suggesting new meals.
 - **No notifications** of any kind.
 - **PWA**: installable on mobile home screen; **not** required to work offline.
@@ -50,7 +50,7 @@ guaranteed accurate. Treat them as flavor, not spec.
 
 ### Data model (informing the schema in Phase 3)
 
-- `users` — name, email, pin_hash, role (parent/child), theme, icon
+- `users` — name, email, pin_hash, role (parent/child), theme, accent_hue
 - `ingredients` — catalog: name, category (produce/dairy/meat/etc.), unit,
   estimated_price. A meal can only reference ingredients that already exist
   here — adding a brand-new ingredient means entering its price first.
@@ -102,7 +102,7 @@ existing rows.
 
 **2. App name.** `BitsAndBytesMenuPlanner`, short form `B&B`.
 
-**3. Color theme.** Palette pulled from the supplied app icon (black
+**3. Color theme.** Base palette pulled from the supplied app icon (black
 rounded-square badge, white torn-receipt "B", lime-green checklist accent):
 
 | Token | Light | Dark |
@@ -110,12 +110,16 @@ rounded-square badge, white torn-receipt "B", lime-green checklist accent):
 | Background | `#F4F5F2` | `#111214` |
 | Surface / card | `#FFFFFF` | `#1C1E20` |
 | Text | `#1A1A1A` | `#F2F2F2` |
-| Accent (lime green) | `#7CB342` | `#9CCC3C` |
-| Bold button (accent-strong) | `#588C1A` | `#7CB342` |
 | Muted / border | `#D8D8D8` | `#3A3D40` |
 
-Both light and dark are first-class (Settings lets a user pick), styled to
-read as the same app in either mode.
+Both light and dark are first-class (Settings lets a user pick). Revised
+during the Phase 2 mockup review: rather than a fixed lime-green accent, the
+accent is **hue-driven and per-user** — `--accent-h` (0–360, default 90 ≈ the
+icon's lime green) is the one thing a user picks via a hue slider; saturation
+and lightness are fixed per theme (`hsl(var(--accent-h) 45% 42%)` light,
+`hsl(var(--accent-h) 55% 55%)` dark) so every accent token derives from that
+one value. Stored as `users.accent_hue`. The static app icon itself is not
+user-customizable, so there's no icon picker in Settings.
 
 **4. Ingredients.** Structured, via a shared `ingredients` catalog (name,
 category, unit, estimated_price) plus a `meal_ingredients` join table —
@@ -204,16 +208,16 @@ Parent picks a past cycle to duplicate into a newly generated one (via
 dates.
 
 ### Phase 11 — Settings
-Color theme picker (light/dark, palette above), icon/avatar picker, PIN
-change, monthly budget, favorites management — all persisted to `users` /
-`budget_settings` and applied app-wide.
-**Deliverable:** theme, PIN, and budget changes persist and take effect
+Light/dark toggle plus accent-hue slider (writes `users.theme` /
+`accent_hue`), PIN change, monthly budget, favorites management — all
+persisted and applied app-wide, per user.
+**Deliverable:** theme, hue, PIN, and budget changes persist and take effect
 immediately.
 
 ### Phase 12 — Feedback
-Form to suggest a new meal, stored in `feedback`; Parents can view submitted
-suggestions.
-**Deliverable:** suggestions round-trip from submission to Parent view.
+Form to suggest a new meal, stored in `feedback`; Parents can review pending
+suggestions and approve (adds to the meal catalog) or dismiss them.
+**Deliverable:** suggestions round-trip from submission to Parent review.
 
 ### Phase 13 — PWA Packaging
 `manifest.json`, install-only `service-worker.js` (no offline caching per
