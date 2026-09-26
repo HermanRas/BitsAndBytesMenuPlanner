@@ -99,6 +99,9 @@ $slotLabel = $hasEntry ? ucfirst($entry['slot']) : null;
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= htmlspecialchars($entry['title']) ?> — BitsAndBytesMenuPlanner</title>
   <link rel="icon" href="img/Icon_32x32.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="img/Icon_192x192.png">
+  <meta name="theme-color" content="#1A1A1A">
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>

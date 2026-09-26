@@ -21,7 +21,7 @@ const pagesAfterLogin = [
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
 
-  await page.goto("http://php-server:8000/login.php", { waitUntil: "networkidle" });
+  await page.goto("http://localhost:8000/login.php", { waitUntil: "networkidle" });
   await page.screenshot({ path: "/screens/login.png", fullPage: true });
 
   await page.fill("#email", "herman.ras.it@gmail.com");
@@ -33,7 +33,7 @@ const pagesAfterLogin = [
   console.log("captured login.png (logged in as Herman)");
 
   for (const [name, file] of pagesAfterLogin) {
-    await page.goto(`http://php-server:8000/${file}`, { waitUntil: "networkidle" });
+    await page.goto(`http://localhost:8000/${file}`, { waitUntil: "networkidle" });
     await page.screenshot({ path: `/screens/${name}.png`, fullPage: true });
     console.log(`captured ${name}.png`);
   }

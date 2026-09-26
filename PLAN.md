@@ -327,9 +327,33 @@ Verified with a real Playwright click-through (submit → review → approve
 double-approve guard and guest/child access gating.
 
 ### Phase 13 — PWA Packaging
-`manifest.json`, install-only `service-worker.js` (no offline caching per
-spec), icon set, install prompt.
-**Deliverable:** app installs to a mobile home screen and launches standalone.
+`manifest.json` (name/short_name "B&B", `start_url: /login.php`,
+`standalone` display, portrait) plus a genuinely install-only
+`service-worker.js` — `install`/`activate` only, deliberately no `fetch`
+handler, so the app is never served from a cache and always hits the
+network as normal. Generated real 192×192 and 512×512 icons from the
+existing 1024×1024 source (resized via GD in a throwaway
+`php:8.3.21-cli-alpine3.20` container — the running app container has no
+image library installed, and per house rule nothing gets installed on the
+dev box itself). The manifest link, apple-touch-icon, and a theme-color
+meta tag were added to every page's `<head>` (the same one-line-per-file
+pattern as Phase 11's `theme_html_attrs()`); the service worker registers
+itself from `mockup.js` (already loaded everywhere), swallowing errors
+silently since registration is expected to fail over plain HTTP on a
+non-localhost host. Settings gained an "Install App" button, hidden by
+default and only shown once a real `beforeinstallprompt` event fires.
+**Deliverable:** app installs to a mobile home screen and launches
+standalone. Verified for real, not just wiring: switched
+`docker-compose.dev.yml`'s Playwright container from joining the app's
+Docker network by service name to `network_mode: "container:bnb-planner"`
+so it can reach the app via literal `http://localhost:8000` — a real
+secure context — since a service-name origin like `php-server:8000` is
+treated as insecure and silently disables `navigator.serviceWorker`
+entirely. With that fixed, a real Playwright run confirmed the service
+worker actually registers and reaches `activated`, the manifest parses
+with the right name/icons, and the install button correctly stays hidden
+until `beforeinstallprompt` fires, then prompts and hides again after a
+simulated accept.
 
 ### Phase 14 — Polish & Hardening
 Responsive QA across breakpoints, accessibility pass (contrast, tap target

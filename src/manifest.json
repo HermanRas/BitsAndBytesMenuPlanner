@@ -1,0 +1,15 @@
+{
+  "name": "BitsAndBytesMenuPlanner",
+  "short_name": "B&B",
+  "description": "This month's family menu, recipes, and shopping list.",
+  "start_url": "/login.php",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F4F5F2",
+  "theme_color": "#1A1A1A",
+  "icons": [
+    { "src": "img/Icon_192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "img/Icon_512x512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

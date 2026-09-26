@@ -150,6 +150,9 @@ $weekRange = cycle_label($thisWeek[0], end($thisWeek));
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Week — BitsAndBytesMenuPlanner</title>
   <link rel="icon" href="img/Icon_32x32.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="img/Icon_192x192.png">
+  <meta name="theme-color" content="#1A1A1A">
   <link rel="stylesheet" href="css/app.css">
   <style>
     .slot-line a { color: inherit; text-decoration: none; flex: 1; min-width: 0; }

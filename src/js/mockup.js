@@ -2,6 +2,14 @@
 // Everything here is client-side state that resets on reload; it exists to
 // let look-and-feel/interactions be reviewed before any real logic is built.
 
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js").catch(() => {
+    // Insecure context (e.g. plain HTTP on a non-localhost host) or
+    // unsupported browser — the app works the same either way, it just
+    // won't be installable to a home screen.
+  });
+}
+
 (function () {
   // Role preview: "parent" sees edit/reorder controls, "guest" is read-only.
   // Set by the Log In / Continue as Guest buttons on login.html.

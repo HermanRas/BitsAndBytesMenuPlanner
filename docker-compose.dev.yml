@@ -2,6 +2,7 @@ services:
   playwright:
     image: mcr.microsoft.com/playwright:v1.47.2-jammy
     working_dir: /work
+    network_mode: "container:bnb-planner"
     volumes:
       - ./tools/playwright:/work
       - playwright_node_modules:/work/node_modules
@@ -10,8 +11,3 @@ services:
 
 volumes:
   playwright_node_modules:
-
-networks:
-  default:
-    name: bitsandbytesplanner_default
-    external: true

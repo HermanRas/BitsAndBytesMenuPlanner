@@ -143,6 +143,9 @@ if ($favorites !== null) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Settings — BitsAndBytesMenuPlanner</title>
   <link rel="icon" href="img/Icon_32x32.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="img/Icon_192x192.png">
+  <meta name="theme-color" content="#1A1A1A">
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
@@ -156,6 +159,11 @@ if ($favorites !== null) {
     </header>
 
     <main class="app-content">
+      <button type="button" id="install-app-btn" class="btn btn-secondary" style="display:none; margin-bottom:1rem;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13m0 0-4-4m4 4 4-4"/><path d="M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+        Install App
+      </button>
+
       <?php if ($flashError !== null): ?>
         <p class="flash-error"><?= htmlspecialchars($flashError, ENT_QUOTES) ?></p>
       <?php endif; ?>
@@ -339,6 +347,25 @@ if ($favorites !== null) {
     </nav>
   </div>
   <script src="js/mockup.js"></script>
+  <script>
+    const installBtn = document.getElementById("install-app-btn");
+    let deferredInstallPrompt = null;
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      installBtn.style.display = "";
+    });
+    installBtn.addEventListener("click", async () => {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      installBtn.style.display = "none";
+    });
+    window.addEventListener("appinstalled", () => {
+      installBtn.style.display = "none";
+    });
+  </script>
   <?php if ($user !== null): ?>
   <script>
     const hueSlider = document.getElementById("hue-slider");
