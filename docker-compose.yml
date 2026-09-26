@@ -1,0 +1,10 @@
+services:
+  php-server:
+    build:
+      context: .
+      dockerfile: php-server.dockerfile
+    container_name: bnb-planner
+    ports:
+      - "8080:8000"
+    volumes:
+      - ./src:/app
