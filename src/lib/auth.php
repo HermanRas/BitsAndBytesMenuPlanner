@@ -92,6 +92,15 @@ function require_login(): array
     return $user ?? ['role' => 'guest'];
 }
 
+/** HTML attributes for the <html> tag applying a user's saved theme/accent hue app-wide. */
+function theme_html_attrs(?array $user): string
+{
+    $theme = ($user['theme'] ?? 'light') === 'dark' ? 'dark' : 'light';
+    $hue = max(0, min(360, (int) ($user['accent_hue'] ?? 90)));
+
+    return 'data-theme="' . $theme . '" style="--accent-h: ' . $hue . ';"';
+}
+
 function require_parent(): array
 {
     $user = current_user();

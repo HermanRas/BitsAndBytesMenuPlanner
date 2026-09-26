@@ -284,11 +284,28 @@ not-cooked — plus a real Playwright click-through of the shrinking case
 meals so only week 1 populated).
 
 ### Phase 11 — Settings
-Light/dark toggle plus accent-hue slider (writes `users.theme` /
-`accent_hue`), PIN change, monthly budget, favorites management — all
-persisted and applied app-wide, per user.
-**Deliverable:** theme, hue, PIN, and budget changes persist and take effect
-immediately.
+Light/dark toggle and accent-hue slider now write `users.theme` /
+`accent_hue` (favorites management was already made real in Phase 8). A
+new `theme_html_attrs($user)` helper renders `data-theme`/`--accent-h`
+straight onto every page's `<html>` tag — the one deliberately shared
+snippet threaded through all ~15 pages so a saved preference applies
+app-wide immediately, not just on Settings — replacing the old
+client-only/localStorage theme preview entirely (removed from
+`mockup.js`, along with the now-dead static `.fav-btn` fallback it also
+carried). The hue slider still live-previews while dragging via a tiny
+inline script, then commits with a real POST on release (`change`, not
+`input`); guests, who have no account row to persist to, no longer see
+the Appearance/PIN/Budget sections at all rather than a preview that
+silently goes nowhere. PIN change verifies the current PIN with
+`password_verify()` before hashing and saving a new one; monthly budget
+(Parent-only) updates `budget_settings`.
+**Deliverable:** theme, hue, PIN, and budget changes persist and take
+effect immediately. Verified with real Playwright interaction (not just
+curl): clicking Dark and dragging the hue slider changed `<html>`'s
+attributes immediately and still held after navigating to an unrelated
+page (Today); curl round-tripped a PIN change end-to-end (old PIN
+rejected, new one logs in) and confirmed guests/children/parents each see
+the right subset of controls.
 
 ### Phase 12 — Feedback
 Form to suggest a new meal, stored in `feedback`; Parents can review pending

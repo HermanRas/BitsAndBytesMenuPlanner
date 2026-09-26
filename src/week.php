@@ -144,7 +144,7 @@ $dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
 $weekRange = cycle_label($thisWeek[0], end($thisWeek));
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="en" <?= theme_html_attrs($user) ?>>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">

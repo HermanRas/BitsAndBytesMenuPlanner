@@ -102,7 +102,7 @@ function render_meal_card(array $entry, array $favoriteMealIds, bool $guest): vo
 }
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="en" <?= theme_html_attrs($user) ?>>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">

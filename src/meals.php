@@ -2,7 +2,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/lib/auth.php';
 
-require_parent();
+$user = require_parent();
 $pdo = get_db();
 
 $flashError = null;
@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
 $meals = $pdo->query('SELECT id, title, image FROM meals ORDER BY title')->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="en" <?= theme_html_attrs($user) ?>>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">

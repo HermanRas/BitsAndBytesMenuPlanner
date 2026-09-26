@@ -3,7 +3,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/lib/auth.php';
 require_once __DIR__ . '/lib/cycle.php';
 
-require_parent();
+$user = require_parent();
 $pdo = get_db();
 
 $cycles = $pdo->query('SELECT * FROM menu_cycles ORDER BY start_date DESC')->fetchAll(PDO::FETCH_ASSOC);
@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'copy_
 }
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="en" <?= theme_html_attrs($user) ?>>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">

@@ -3,7 +3,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/lib/auth.php';
 require_once __DIR__ . '/lib/uploads.php';
 
-require_parent();
+$user = require_parent();
 $pdo = get_db();
 
 $mealId = isset($_GET['id']) ? (int) $_GET['id'] : null;
@@ -105,7 +105,7 @@ function ingredient_options(array $all, int $selectedId): string
 }
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="en" <?= theme_html_attrs($user) ?>>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">

@@ -2,7 +2,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/lib/auth.php';
 
-require_parent();
+$user = require_parent();
 $pdo = get_db();
 
 $categories = ['produce', 'dairy', 'meat', 'bakery', 'pantry', 'spices', 'frozen'];
@@ -73,7 +73,7 @@ foreach ($ingredients as $ing) {
 }
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="en" <?= theme_html_attrs($user) ?>>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">

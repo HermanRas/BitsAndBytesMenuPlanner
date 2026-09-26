@@ -10,11 +10,55 @@ if ($user === null && !$guest) {
 }
 
 $isParent = $user !== null && $user['role'] === 'parent';
+$pdo = get_db();
 $flashError = null;
+$flashSuccess = null;
 $openAddModal = false;
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user !== null && ($_POST['action'] ?? '') === 'set_theme') {
+    $theme = ($_POST['theme'] ?? '') === 'dark' ? 'dark' : 'light';
+    $pdo->prepare('UPDATE users SET theme = :t WHERE id = :id')->execute([':t' => $theme, ':id' => $user['id']]);
+    header('Location: settings.php');
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user !== null && ($_POST['action'] ?? '') === 'set_hue') {
+    $hue = max(0, min(360, (int) ($_POST['hue'] ?? 90)));
+    $pdo->prepare('UPDATE users SET accent_hue = :h WHERE id = :id')->execute([':h' => $hue, ':id' => $user['id']]);
+    header('Location: settings.php');
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user !== null && ($_POST['action'] ?? '') === 'update_pin') {
+    $current = trim($_POST['current_pin'] ?? '');
+    $new = trim($_POST['new_pin'] ?? '');
+    $confirm = trim($_POST['confirm_pin'] ?? '');
+
+    if (!password_verify($current, $user['pin_hash'])) {
+        $flashError = 'Current PIN is incorrect.';
+    } elseif (!preg_match('/^\d{4,6}$/', $new)) {
+        $flashError = 'New PIN must be 4–6 digits.';
+    } elseif ($new !== $confirm) {
+        $flashError = "New PIN and confirmation don't match.";
+    } else {
+        $pdo->prepare('UPDATE users SET pin_hash = :h WHERE id = :id')
+            ->execute([':h' => password_hash($new, PASSWORD_DEFAULT), ':id' => $user['id']]);
+        $flashSuccess = 'PIN updated.';
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isParent && ($_POST['action'] ?? '') === 'update_budget') {
+    $budget = $_POST['budget'] ?? '';
+
+    if (!is_numeric($budget) || (float) $budget < 0) {
+        $flashError = 'Enter a valid budget amount.';
+    } else {
+        $pdo->prepare('UPDATE budget_settings SET monthly_budget = :b WHERE id = 1')->execute([':b' => (float) $budget]);
+        $flashSuccess = 'Budget updated.';
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isParent) {
-    $pdo = get_db();
     $action = $_POST['action'] ?? '';
 
     if ($action === 'add_member') {
@@ -80,6 +124,8 @@ $members = $isParent
     ? get_db()->query('SELECT id, name, email, role FROM users ORDER BY role, name')->fetchAll(PDO::FETCH_ASSOC)
     : [];
 
+$currentBudget = $isParent ? (float) $pdo->query('SELECT monthly_budget FROM budget_settings WHERE id = 1')->fetchColumn() : null;
+
 $favorites = $user !== null
     ? get_db()->prepare('SELECT m.id, m.title, m.image FROM favorites f JOIN meals m ON m.id = f.meal_id WHERE f.user_id = :uid ORDER BY m.title')
     : null;
@@ -91,7 +137,7 @@ if ($favorites !== null) {
 }
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="en" <?= theme_html_attrs($user) ?>>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -113,42 +159,67 @@ if ($favorites !== null) {
       <?php if ($flashError !== null): ?>
         <p class="flash-error"><?= htmlspecialchars($flashError, ENT_QUOTES) ?></p>
       <?php endif; ?>
+      <?php if ($flashSuccess !== null): ?>
+        <p class="hint" style="color:var(--accent-strong); font-weight:700; margin-bottom:1rem;"><?= htmlspecialchars($flashSuccess, ENT_QUOTES) ?></p>
+      <?php endif; ?>
 
+      <?php if ($user !== null): ?>
       <h3 class="section-heading" style="margin-top:0;">Appearance</h3>
       <div class="view-toggle" style="margin-bottom:1rem;">
-        <button class="active" data-theme-choice="light">Light</button>
-        <button data-theme-choice="dark">Dark</button>
+        <form method="post" style="display:contents;">
+          <input type="hidden" name="action" value="set_theme">
+          <input type="hidden" name="theme" value="light">
+          <button type="submit" class="<?= $user['theme'] === 'light' ? 'active' : '' ?>">Light</button>
+        </form>
+        <form method="post" style="display:contents;">
+          <input type="hidden" name="action" value="set_theme">
+          <input type="hidden" name="theme" value="dark">
+          <button type="submit" class="<?= $user['theme'] === 'dark' ? 'active' : '' ?>">Dark</button>
+        </form>
       </div>
 
       <div class="accent-preview" id="accent-preview"></div>
       <label class="hint" for="hue-slider" style="display:block; font-weight:700; color:var(--text); font-size:0.85rem; margin-bottom:0.2rem;">
         Accent color
       </label>
-      <input type="range" class="hue-slider" id="hue-slider" min="0" max="360" value="90">
+      <input type="range" class="hue-slider" id="hue-slider" min="0" max="360" value="<?= (int) $user['accent_hue'] ?>">
+      <form method="post" id="hue-form">
+        <input type="hidden" name="action" value="set_hue">
+        <input type="hidden" name="hue" id="hue-hidden-input">
+      </form>
       <p class="hint">Drag to pick your own color — each family member can set their own.</p>
 
       <h3 class="section-heading">PIN code</h3>
-      <div class="field">
-        <label for="current-pin">Current PIN</label>
-        <input type="password" id="current-pin" inputmode="numeric" maxlength="6">
-      </div>
-      <div class="field">
-        <label for="new-pin">New PIN</label>
-        <input type="password" id="new-pin" inputmode="numeric" maxlength="6">
-      </div>
-      <div class="field">
-        <label for="confirm-pin">Confirm new PIN</label>
-        <input type="password" id="confirm-pin" inputmode="numeric" maxlength="6">
-      </div>
-      <button class="btn btn-secondary">Update PIN</button>
+      <form method="post">
+        <input type="hidden" name="action" value="update_pin">
+        <div class="field">
+          <label for="current-pin">Current PIN</label>
+          <input type="password" id="current-pin" name="current_pin" inputmode="numeric" maxlength="6" required>
+        </div>
+        <div class="field">
+          <label for="new-pin">New PIN</label>
+          <input type="password" id="new-pin" name="new_pin" inputmode="numeric" pattern="\d{4,6}" maxlength="6" required>
+        </div>
+        <div class="field">
+          <label for="confirm-pin">Confirm new PIN</label>
+          <input type="password" id="confirm-pin" name="confirm_pin" inputmode="numeric" maxlength="6" required>
+        </div>
+        <button type="submit" class="btn btn-secondary">Update PIN</button>
+      </form>
+      <?php endif; ?>
 
+      <?php if ($isParent): ?>
       <h3 class="section-heading">Monthly grocery budget</h3>
-      <div class="field">
-        <label for="budget">Budget per cycle</label>
-        <input type="text" id="budget" value="R2,800">
-        <p class="hint">You'll get a warning when a menu's estimated shopping cost goes over this.</p>
-      </div>
-      <button class="btn btn-secondary">Save budget</button>
+      <form method="post">
+        <input type="hidden" name="action" value="update_budget">
+        <div class="field">
+          <label for="budget">Budget per cycle</label>
+          <input type="number" id="budget" name="budget" min="0" step="0.01" value="<?= htmlspecialchars((string) $currentBudget) ?>" required>
+          <p class="hint">You'll get a warning when a menu's estimated shopping cost goes over this.</p>
+        </div>
+        <button type="submit" class="btn btn-secondary">Save budget</button>
+      </form>
+      <?php endif; ?>
 
       <?php if ($user !== null): ?>
       <h3 class="section-heading">Favorite meals</h3>
@@ -264,6 +335,18 @@ if ($favorites !== null) {
     </nav>
   </div>
   <script src="js/mockup.js"></script>
+  <?php if ($user !== null): ?>
+  <script>
+    const hueSlider = document.getElementById("hue-slider");
+    hueSlider.addEventListener("input", () => {
+      document.documentElement.style.setProperty("--accent-h", hueSlider.value);
+    });
+    hueSlider.addEventListener("change", () => {
+      document.getElementById("hue-hidden-input").value = hueSlider.value;
+      document.getElementById("hue-form").submit();
+    });
+  </script>
+  <?php endif; ?>
   <?php if ($openAddModal): ?>
   <script>
     document.addEventListener("DOMContentLoaded", () => document.getElementById("add-member-modal").showModal());
