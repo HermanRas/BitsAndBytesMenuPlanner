@@ -9,7 +9,7 @@ container, styled after the `HappyHubby` project's simple container setup (no
 framework — plain PHP served via the built-in dev server, Composer only if a
 dependency becomes necessary).
 
-Sample files in the repo root (`Menu.jpg`, `Sample_MealLayout.md`,
+Sample files in `Docs/` (`Menu.jpg`, `Sample_MealLayout.md`,
 `Sample_shoppinglist.md`) are GPT-generated exports of a real family menu —
 useful as **seed/placeholder content** for the mockup and dev database, but not
 guaranteed accurate. Treat them as flavor, not spec.
