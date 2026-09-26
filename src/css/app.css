@@ -826,6 +826,91 @@ h2.page-title {
   font-weight: 600;
 }
 
+.avatar-initial {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--border);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.remove-btn {
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.3rem 0.5rem;
+  flex-shrink: 0;
+}
+
+.flash-error {
+  background: rgba(192, 57, 53, 0.12);
+  color: var(--danger);
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+dialog#add-member-modal {
+  border: none;
+  border-radius: 18px;
+  padding: 1.25rem;
+  width: min(340px, calc(100vw - 3rem));
+  background: var(--surface);
+  color: var(--text);
+}
+
+dialog#add-member-modal::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+dialog#add-member-modal h3 {
+  margin-top: 0;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.modal-actions .btn {
+  width: auto;
+  flex: 1;
+}
+
+.role-radio-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.role-radio-row label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.6rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.role-radio-row input {
+  accent-color: var(--accent-strong);
+}
+
 .search-box {
   display: flex;
   align-items: center;

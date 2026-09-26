@@ -29,10 +29,11 @@ $insertUser = $pdo->prepare(
 );
 $userId = [];
 foreach ([
-    ['Mom', 'mom@family.com', '1234', 'parent', 'light', 90],
-    ['Dad', 'dad@family.com', '4321', 'parent', 'dark', 90],
-    ['Jayden', 'jayden@family.com', '5678', 'child', 'light', 210],
-    ['Mia', 'mia@family.com', '1111', 'child', 'light', 330],
+    ['Herman', 'herman.ras.it@gmail.com', '2233', 'parent', 'light', 90],
+    ['Freda', 'freda.ras@gmail.com', '2233', 'parent', 'light', 140],
+    ['Alexander', 'alexander.ras.pc@gmail.com', '2233', 'child', 'dark', 210],
+    ['Leanne', 'leanne.ras.pc@gmail.com', '2233', 'child', 'light', 330],
+    ['Danie', 'danie.bekker@gmail.com', '2233', 'child', 'dark', 20],
 ] as [$name, $email, $pin, $role, $theme, $hue]) {
     $insertUser->execute([
         ':name' => $name,
@@ -359,11 +360,11 @@ foreach ($entries as [$dayOffset, $slot, $title, $cooked]) {
 
 // --- Favorites -------------------------------------------------------------
 $pdo->prepare('INSERT INTO favorites (user_id, meal_id) VALUES (:user_id, :meal_id)')->execute([
-    ':user_id' => $userId['Jayden'],
+    ':user_id' => $userId['Alexander'],
     ':meal_id' => $mealId['Beef Burgers, Pineapple & Chips'],
 ]);
 $pdo->prepare('INSERT INTO favorites (user_id, meal_id) VALUES (:user_id, :meal_id)')->execute([
-    ':user_id' => $userId['Mia'],
+    ':user_id' => $userId['Leanne'],
     ':meal_id' => $mealId['Chocolate Pap'],
 ]);
 
@@ -372,19 +373,19 @@ $insertFeedback = $pdo->prepare(
     'INSERT INTO feedback (user_id, meal_name, note, status) VALUES (:user_id, :meal_name, :note, :status)'
 );
 $insertFeedback->execute([
-    ':user_id' => $userId['Dad'],
+    ':user_id' => $userId['Herman'],
     ':meal_name' => 'Bobotie',
     ':note' => '',
     ':status' => 'added',
 ]);
 $insertFeedback->execute([
-    ':user_id' => $userId['Jayden'],
+    ':user_id' => $userId['Alexander'],
     ':meal_name' => 'Butter Chicken',
     ':note' => "We had this at a friend's house, it was so good!",
     ':status' => 'pending',
 ]);
 $insertFeedback->execute([
-    ':user_id' => $userId['Mia'],
+    ':user_id' => $userId['Leanne'],
     ':meal_name' => 'Malva Pudding',
     ':note' => 'Dessert idea for a Sunday lunch.',
     ':status' => 'pending',

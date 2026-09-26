@@ -160,12 +160,17 @@ from the sample files as placeholder data.
 generated cycle matching the sample menu dates), verified by a throwaway
 script dumping table contents.
 
-### Phase 4 — Auth (PIN + Email, Guest)
+### Phase 4 — Auth (PIN + Email, Guest) + Family Member Management
 Wire the Phase 2 login screen to the database: email + PIN check against
 `users`, session handling, role (parent/child) stored in session. Guest button
-starts a read-only session with no DB lookup.
+starts a read-only session with no DB lookup. Since managing who's in
+`users` is directly tied to auth, pulled forward from Phase 11: Settings
+gained a parent-only Family Members list (name/email/role, remove with a
+confirm) and an "+ Add Family Member" modal (name/email/PIN/role), with
+guards against removing yourself or the last remaining parent.
 **Deliverable:** log in as a seeded parent or child, or continue as guest;
-session persists across pages.
+session persists across pages; a parent can add/remove family members from
+Settings.
 
 ### Phase 5 — Today View & Meal Detail (dynamic, read-only)
 Replace hardcoded data on the Today and Meal Detail pages with real queries.
