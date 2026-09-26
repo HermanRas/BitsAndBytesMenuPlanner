@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shopping List — BitsAndBytesMenuPlanner</title>
+  <link rel="icon" href="img/Icon_32x32.png">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <img class="logo" src="img/Icon_128x128.png" alt="">
+      <div>
+        <h1>Shopping List</h1>
+        <p class="subtitle">Week 1 · 28 Sep – 4 Oct</p>
+      </div>
+      <div class="header-spacer"></div>
+      <button class="icon-btn" aria-label="Share list">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5 15.4 6.5M8.6 13.5l6.8 4"/></svg>
+      </button>
+    </header>
+
+    <main class="app-content">
+      <div class="budget-card">
+        <div class="row"><span>Estimated cost</span><span>R2,905</span></div>
+        <div class="progress-track">
+          <div class="progress-fill over-budget" style="width:100%;"></div>
+        </div>
+        <p class="budget-note">⚠ R105 over your R2,800 monthly budget — consider swapping a meal before you shop.</p>
+      </div>
+
+      <div class="category-heading">Meat &amp; Protein</div>
+      <label class="check-item">
+        <input type="checkbox">
+        <span class="item-name">Beef mince</span>
+        <span class="item-qty">5 kg · R450</span>
+      </label>
+      <label class="check-item">
+        <input type="checkbox">
+        <span class="item-name">Chicken fillets</span>
+        <span class="item-qty">4.5 kg · R380</span>
+      </label>
+      <label class="check-item checked">
+        <input type="checkbox" checked>
+        <span class="item-name">Boerewors</span>
+        <span class="item-qty">3 kg · R240</span>
+      </label>
+
+      <div class="category-heading">Fresh Produce</div>
+      <label class="check-item">
+        <input type="checkbox">
+        <span class="item-name">Potatoes</span>
+        <span class="item-qty">10 kg · R150</span>
+      </label>
+      <label class="check-item">
+        <input type="checkbox">
+        <span class="item-name">Onions</span>
+        <span class="item-qty">4 kg · R80</span>
+      </label>
+      <label class="check-item">
+        <input type="checkbox">
+        <span class="item-name">Tomatoes</span>
+        <span class="item-qty">3 kg · R90</span>
+      </label>
+
+      <div class="category-heading">Dairy</div>
+      <label class="check-item">
+        <input type="checkbox">
+        <span class="item-name">Cheddar cheese</span>
+        <span class="item-qty">4 kg · R360</span>
+      </label>
+      <label class="check-item">
+        <input type="checkbox">
+        <span class="item-name">Milk</span>
+        <span class="item-qty">15 L · R270</span>
+      </label>
+
+      <div class="category-heading">Pantry</div>
+      <label class="check-item">
+        <input type="checkbox">
+        <span class="item-name">Cooking oil</span>
+        <span class="item-qty">5 L · R200</span>
+      </label>
+      <label class="check-item">
+        <input type="checkbox">
+        <span class="item-name">Spaghetti</span>
+        <span class="item-qty">5 kg · R175</span>
+      </label>
+      <label class="check-item">
+        <input type="checkbox">
+        <span class="item-name">Rice</span>
+        <span class="item-qty">3 kg · R120</span>
+      </label>
+
+      <div class="category-heading">Bread &amp; Bakery</div>
+      <label class="check-item">
+        <input type="checkbox">
+        <span class="item-name">Bread</span>
+        <span class="item-qty">12 loaves · R240</span>
+      </label>
+      <label class="check-item">
+        <input type="checkbox">
+        <span class="item-name">Burger rolls</span>
+        <span class="item-qty">30 · R150</span>
+      </label>
+
+      <button class="btn btn-secondary" style="margin-top:1rem;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5 15.4 6.5M8.6 13.5l6.8 4"/></svg>
+        Share with family
+      </button>
+    </main>
+
+    <nav class="bottom-nav">
+      <a href="today.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>
+        <span>Today</span>
+      </a>
+      <a href="calendar.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+        <span>Menu</span>
+      </a>
+      <a href="shopping-list.html" class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.4a2 2 0 0 0 2-1.6L21 7H6"/></svg>
+        <span>Shopping</span>
+      </a>
+      <a href="settings.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.9 7.9 0 0 0 0-2l2-1.6-2-3.4-2.4 1a8 8 0 0 0-1.7-1L14.9 3h-4l-.4 2.5a8 8 0 0 0-1.7 1l-2.4-1-2 3.4L6.4 11a7.9 7.9 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a8 8 0 0 0 1.7 1l.4 2.5h4l.4-2.5a8 8 0 0 0 1.7-1l2.4 1 2-3.4z"/></svg>
+        <span>Settings</span>
+      </a>
+    </nav>
+  </div>
+  <script src="js/mockup.js"></script>
+</body>
+</html>

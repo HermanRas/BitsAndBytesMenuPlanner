@@ -1,0 +1,17 @@
+services:
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.47.2-jammy
+    working_dir: /work
+    volumes:
+      - ./tools/playwright:/work
+      - playwright_node_modules:/work/node_modules
+      - ./tools/screenshots:/screens
+    command: ["bash", "-c", "npm install --no-audit --no-fund --silent && node screenshot.js"]
+
+volumes:
+  playwright_node_modules:
+
+networks:
+  default:
+    name: bitsandbytesplanner_default
+    external: true

@@ -1,0 +1,8 @@
+{
+  "name": "bnb-planner-screenshots",
+  "private": true,
+  "description": "Throwaway dev tool: screenshots the mockup pages for visual review. Not part of the app.",
+  "dependencies": {
+    "playwright": "1.47.2"
+  }
+}

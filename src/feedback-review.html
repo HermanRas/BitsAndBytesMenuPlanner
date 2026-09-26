@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review Suggestions — BitsAndBytesMenuPlanner</title>
+  <link rel="icon" href="img/Icon_32x32.png">
+  <link rel="stylesheet" href="css/app.css">
+  <style>
+    .suggestion-card { display:flex; flex-direction:column; gap:0.5rem; }
+    .suggestion-card .top-row { display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem; }
+    .suggestion-card .meal-name { font-weight:700; font-size:1.05rem; }
+    .suggestion-card .submitted-by { font-size:0.78rem; color:var(--text-muted); }
+    .suggestion-card .note { font-size:0.88rem; color:var(--text-muted); }
+    .suggestion-actions { display:flex; gap:0.6rem; margin-top:0.3rem; }
+    .suggestion-actions .btn { width:auto; flex:1; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <a href="settings.html" class="back-link">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+        Back
+      </a>
+    </header>
+
+    <main class="app-content">
+      <h2 class="page-title">Review Suggestions</h2>
+      <p class="hint" style="margin-bottom:1rem;">Meals the family has suggested. Approve to add them to the meal catalog.</p>
+
+      <div class="card suggestion-card">
+        <div class="top-row">
+          <div>
+            <div class="meal-name">Butter Chicken</div>
+            <div class="submitted-by">Suggested by Jayden · 2 days ago</div>
+          </div>
+          <span class="badge badge-not-cooked">Pending</span>
+        </div>
+        <p class="note">"We had this at a friend's house, it was so good!"</p>
+        <div class="suggestion-actions">
+          <button class="btn btn-primary btn-small">Approve</button>
+          <button class="btn btn-secondary btn-small">Dismiss</button>
+        </div>
+      </div>
+
+      <div class="card suggestion-card">
+        <div class="top-row">
+          <div>
+            <div class="meal-name">Malva Pudding</div>
+            <div class="submitted-by">Suggested by Mia · 5 days ago</div>
+          </div>
+          <span class="badge badge-not-cooked">Pending</span>
+        </div>
+        <p class="note">Dessert idea for a Sunday lunch.</p>
+        <div class="suggestion-actions">
+          <button class="btn btn-primary btn-small">Approve</button>
+          <button class="btn btn-secondary btn-small">Dismiss</button>
+        </div>
+      </div>
+
+      <div class="card suggestion-card">
+        <div class="top-row">
+          <div>
+            <div class="meal-name">Bobotie</div>
+            <div class="submitted-by">Suggested by Dad · 3 weeks ago</div>
+          </div>
+          <span class="badge badge-cooked">Added to catalog</span>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="js/mockup.js"></script>
+</body>
+</html>
