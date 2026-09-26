@@ -1,0 +1,22 @@
+# Build context is the repo root; only src/ ends up in the image.
+.git
+.github
+.claude
+PLAN.md
+README.md
+LICENSE
+docs
+tools
+Docs
+docker-compose*.yml
+php-server.dockerfile
+.dockerignore
+
+# Runtime data doesn't belong in the image itself — a fresh container
+# creates its own database (see lib/db.php's bootstrap_demo_data()), and a
+# real deployment persists src/data and src/img/meals via named volumes
+# (docker-compose.prod.yml) rather than shipping whatever the last build
+# happened to contain.
+src/data/*.sqlite
+src/img/meals/*
+!src/img/meals/.gitkeep

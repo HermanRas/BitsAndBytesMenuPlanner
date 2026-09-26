@@ -472,6 +472,59 @@ each fix above (blocked paths 404, allowed paths still 200, session
 cookie flags present, login timing/lockout behavior, focus rings
 appearing on tab, no overflow at 320px).
 
+### Post-launch — public repo & real deployment
+Not a phase, but the work needed to actually publish and self-host this
+rather than just run it in dev:
+
+- **Demo user bootstrap.** A brand-new deploy previously had an empty
+  `users` table and no way to log in at all. `lib/db.php`'s `get_db()`
+  already auto-applies `schema.sql` the first time the database file
+  doesn't exist; it now also calls a new `bootstrap_demo_data()` right
+  after, inserting one demo Parent (`demo@example.com` / `1234`), a
+  default `budget_settings` row (production had no row at all, so the
+  budget form silently updated zero rows), and a menu cycle that
+  actually covers today (checked against the surrounding months, since
+  which `generate_cycle()` call covers "today" shifts with the
+  calendar). `seed.php` still wipes and replaces all of this with fake
+  family data for local dev, unaffected.
+- **`src/data/` wasn't tracked in git at all** — a fresh clone would
+  have no directory for SQLite to create the file in. Added
+  `src/data/.gitkeep` and made `get_db()` `mkdir` it defensively either
+  way.
+- **The Docker image was empty.** `php-server.dockerfile` never
+  `COPY`'d the app in — the only way any PHP code ever reached the
+  container was `docker-compose.yml`'s `./src:/app` bind mount. Fine for
+  local dev, but a published image would have been a bare PHP install
+  with no app in it. Added `COPY src/ /app/` plus a root `.dockerignore`
+  (excludes `data/*.sqlite`, uploaded `img/meals/*`, and non-runtime
+  files like `PLAN.md`/`tools/`). The dev bind mount still overlays this
+  at runtime and takes precedence, so live-editing is unaffected —
+  verified by rebuilding and confirming the dev container still shows
+  the seeded Ras family, not the baked-in demo account.
+- **`docker-compose.prod.yml`** — deploy the published
+  `ghcr.io/hermanras/bitsandbytesmenuplanner` image directly, no repo
+  checkout needed, with `bnb_data`/`bnb_meal_images` named volumes so
+  the database and uploaded meal photos survive `pull && up -d` across
+  releases.
+- **CI** (`.github/workflows/image.yml`, modeled after a working
+  build/smoke/push workflow from another project): builds the image,
+  then runs it **standalone** — no bind mount, no compose file, exactly
+  how a GHCR pull would run it — and proves the demo-login bootstrap
+  actually works against a container that has never seen this codebase
+  before, and that the Phase 14 data/source exposure stays fixed
+  (`/data/family.sqlite`, `/lib/*.php`, etc. all still 404). Only pushes
+  to GHCR (`:latest` and `:sha-<sha>`) on a push to `main`, after all of
+  the above passes.
+- **`LICENSE`** (MIT) and **`README.md`** (features, screenshots, the
+  demo credentials, dev vs. prod compose usage) added for the public
+  repo.
+
+Verified locally end-to-end before relying on CI to prove it for the
+first time: built the image standalone, ran it with zero volumes at
+all, confirmed a fresh container logs in as the demo account, reaches
+`today.php`, and still 404s every blocked path — the exact sequence the
+CI workflow runs.
+
 ---
 
 ## Container Reference
@@ -483,6 +536,10 @@ Following `HappyHubby`'s pattern:
   served as static files, since the built-in server otherwise treats the
   entire document root as public.
 - `docker-compose.yml`: single `php-server` service, `./src:/app` volume,
-  port mapped to host (e.g. `8080:8000`).
+  port mapped to host (e.g. `8080:8000`). Dev use — bind-mounts live
+  source over whatever's baked into the image.
+- `docker-compose.prod.yml`: same image, pulled from GHCR instead of
+  built locally, with named volumes for `data/` and `img/meals/` instead
+  of a source bind mount. Real deployment.
 - No frameworks unless a specific need arises (HappyHubby only pulled in
   Composer packages for web-push notifications, which this app doesn't need).

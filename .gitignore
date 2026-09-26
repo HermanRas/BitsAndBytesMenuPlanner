@@ -1,2 +1,3 @@
 tools/screenshots/*.png
 tools/playwright/node_modules/
+.claude/

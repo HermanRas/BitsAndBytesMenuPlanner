@@ -1,0 +1,18 @@
+# Real deployment, using the image CI publishes to GHCR -- no repo checkout
+# needed. Data and uploaded meal photos are named volumes rather than bind
+# mounts so they survive `docker compose pull && up -d` (a fresh image, same
+# data). See README.md for the demo login created on first boot.
+services:
+  app:
+    image: ghcr.io/hermanras/bitsandbytesmenuplanner:latest
+    container_name: bnb-planner
+    ports:
+      - "8080:8000"
+    volumes:
+      - bnb_data:/app/data
+      - bnb_meal_images:/app/img/meals
+    restart: unless-stopped
+
+volumes:
+  bnb_data:
+  bnb_meal_images:

@@ -6,8 +6,13 @@ RUN apk update && apk upgrade && \
 
 RUN docker-php-ext-install pdo_sqlite
 
-RUN mkdir /app
 WORKDIR /app
+
+# Bakes the app into the image so it's runnable standalone (docker run, no
+# bind mount needed) -- e.g. for the published GHCR image. Local dev's
+# docker-compose.yml bind-mounts ./src:/app on top of this at runtime, which
+# takes precedence, so live-editing during development is unaffected.
+COPY src/ /app/
 
 CMD ["php", "-S", "0.0.0.0:8000", "-t", "/app", "/app/router.php"]
 # Expose the port the app runs on
