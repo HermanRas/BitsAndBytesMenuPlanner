@@ -5,7 +5,7 @@ const pagesAfterLogin = [
   ["search", "search.php"],
   ["calendar", "calendar.php"],
   ["week", "week.php"],
-  ["shopping-list", "shopping-list.html"],
+  ["shopping-list", "shopping-list.php"],
   ["settings", "settings.php"],
   ["meal-detail", "meal-detail.php?entry=8"],
   ["meals", "meals.php"],

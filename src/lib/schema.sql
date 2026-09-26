@@ -70,6 +70,13 @@ CREATE TABLE IF NOT EXISTS favorites (
   PRIMARY KEY (user_id, meal_id)
 );
 
+-- Ticked-off state of items on a cycle's shopping list; presence = checked.
+CREATE TABLE IF NOT EXISTS shopping_checks (
+  cycle_id INTEGER NOT NULL REFERENCES menu_cycles(id) ON DELETE CASCADE,
+  ingredient_id INTEGER NOT NULL REFERENCES ingredients(id) ON DELETE CASCADE,
+  PRIMARY KEY (cycle_id, ingredient_id)
+);
+
 CREATE TABLE IF NOT EXISTS feedback (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

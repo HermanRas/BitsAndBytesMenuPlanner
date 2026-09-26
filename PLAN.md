@@ -63,6 +63,8 @@ guaranteed accurate. Treat them as flavor, not spec.
   cooked (bool), sort_order
 - `budget_settings` — monthly_budget (single row, Parent-editable)
 - `favorites` — user_id, meal_id
+- `shopping_checks` — cycle_id, ingredient_id (presence = ticked off on that
+  cycle's shopping list)
 - `feedback` — user_id, suggested meal text, status
 
 ### Decisions log
@@ -241,11 +243,24 @@ and edits real data. Verified with a real Playwright search-then-favorite
 click-through, not just curl.
 
 ### Phase 9 — Shopping List
-Select a cycle (or custom date range), aggregate ingredients grouped by
-category with quantities and estimated cost per item/category/total,
-checklist UI, share (e.g. copy-to-clipboard/native share sheet).
+`shopping-list.php` replaces the static mockup: resolves a cycle the same
+way Calendar/Week do (`?cycle=` or whichever covers today, falling back to
+soonest-upcoming/most-recent-past), with the same prev/next cycle nav.
+Ingredients across every `menu_entries` row in the cycle are summed per
+ingredient (`SUM(qty)`, correctly counting repeated meal occurrences) and
+grouped under the same fixed category order used in `ingredients.php`
+(produce, dairy, meat, bakery, pantry, spices, frozen), each line showing
+quantity/unit and estimated cost, with the same budget banner as
+Calendar/Week. A new `shopping_checks` table (`cycle_id`, `ingredient_id`)
+persists which items are ticked off — real per-item checkboxes toggle via
+the usual POST/redirect pattern, so a check made on one family member's
+phone shows up for everyone. Guests get the same list read-only (disabled
+checkboxes, no form). Share button uses the real Web Share API where
+available, falling back to copy-to-clipboard.
 **Deliverable:** shopping list generates correctly, with accurate costs,
-from a real cycle.
+from a real cycle; checking items off persists per-cycle; verified the
+aggregation math against a raw DB query and a real Playwright click on the
+checklist (not just curl) round-tripped a check to the database and back.
 
 ### Phase 10 — Copy Cycle
 Parent picks a past cycle to duplicate into a newly generated one (via
