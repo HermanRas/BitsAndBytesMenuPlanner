@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'copy_
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="img/Icon_192x192.png">
   <meta name="theme-color" content="#1A1A1A">
-  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="<?= asset_url('css/app.css') ?>">
 </head>
 <body>
   <div class="app-shell">
@@ -155,6 +155,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'copy_
       </a>
     </nav>
   </div>
-  <script src="js/mockup.js"></script>
+  <script src="<?= asset_url('js/mockup.js') ?>"></script>
 </body>
 </html>

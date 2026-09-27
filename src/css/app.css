@@ -298,10 +298,18 @@ h2.page-title {
   text-overflow: ellipsis;
 }
 
-/* Today: name on its own line, actions underneath, so long names aren't
-   squeezed behind the buttons on a phone. */
+/* Today: the name sits above the Cooked badge, so on a phone the badge no
+   longer takes the name's width; heart and remove stay on the right. */
 .meal-card-stacked {
-  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.meal-card-stacked .badge {
+  white-space: nowrap;
+}
+
+.meal-card-stacked .fav-form + form {
+  margin-left: -0.4rem;
 }
 
 .meal-card-stacked .meal-thumb {
@@ -312,26 +320,18 @@ h2.page-title {
 .meal-card-stacked .meal-body {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
 }
 
 .meal-card-stacked .meal-title {
   display: block;
+  max-width: 100%;
+  margin: 0;
   color: var(--text);
   text-decoration: none;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  line-height: 1.25;
-}
-
-.meal-card-stacked .meal-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin-top: 0.1rem;
-}
-
-.meal-card-stacked .meal-actions .cooked-toggle-form {
-  margin-right: auto;
 }
 
 .badge {

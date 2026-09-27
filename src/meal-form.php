@@ -114,7 +114,7 @@ function ingredient_options(array $all, int $selectedId): string
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="img/Icon_192x192.png">
   <meta name="theme-color" content="#1A1A1A">
-  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="<?= asset_url('css/app.css') ?>">
   <style>
     .ingredient-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
     .ingredient-row select { flex: 1; min-width: 0; padding: 0.7rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }

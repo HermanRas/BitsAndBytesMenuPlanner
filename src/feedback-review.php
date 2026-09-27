@@ -71,7 +71,7 @@ function time_ago(string $datetime): string
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="img/Icon_192x192.png">
   <meta name="theme-color" content="#1A1A1A">
-  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="<?= asset_url('css/app.css') ?>">
   <style>
     .suggestion-card { display:flex; flex-direction:column; gap:0.5rem; }
     .suggestion-card .top-row { display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem; }
@@ -136,6 +136,6 @@ function time_ago(string $datetime): string
       <?php endforeach; ?>
     </main>
   </div>
-  <script src="js/mockup.js"></script>
+  <script src="<?= asset_url('js/mockup.js') ?>"></script>
 </body>
 </html>

@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="img/Icon_192x192.png">
   <meta name="theme-color" content="#1A1A1A">
-  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="<?= asset_url('css/app.css') ?>">
 </head>
 <body class="login-screen">
   <div class="app-shell">

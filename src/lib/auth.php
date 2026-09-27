@@ -108,6 +108,17 @@ function require_login(): array
     return $user ?? ['role' => 'guest'];
 }
 
+/**
+ * A static asset path with its modified time appended, so a deploy changes the
+ * URL and Cloudflare's 4-hour edge cache can't serve a stale stylesheet or
+ * script alongside new HTML.
+ */
+function asset_url(string $path): string
+{
+    $mtime = @filemtime(__DIR__ . '/../' . $path);
+    return $mtime ? $path . '?v=' . $mtime : $path;
+}
+
 /** HTML attributes for the <html> tag applying a user's saved theme/accent hue app-wide. */
 function theme_html_attrs(?array $user): string
 {
