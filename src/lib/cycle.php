@@ -132,3 +132,55 @@ function cycle_weeks(array $cycle): array
 
     return $weeks;
 }
+
+/**
+ * How many of an ingredient's units you actually have to buy for $qty.
+ * Packaged items (tins, jars, "500g" packs) round up to whole units — you
+ * can't buy a quarter of a mayonnaise. Loose items priced "per kg" are weighed
+ * at the till, so they keep their fractional quantity.
+ */
+function purchase_qty(float $qty, string $unit): float
+{
+    if (stripos(ltrim($unit), 'per ') === 0) {
+        return $qty;
+    }
+
+    // Round first so float noise like 2.0000000001 doesn't become 3.
+    return ceil(round($qty, 4));
+}
+
+/**
+ * The cycle's shopping list: one row per ingredient with the total quantity
+ * the menu uses, the quantity to buy, and what that purchase costs.
+ * @return list<array{id: int, name: string, category: string, unit: string, estimated_price: float, total_qty: float, buy_qty: float, line_total: float}>
+ */
+function cycle_shopping_items(PDO $pdo, int $cycleId): array
+{
+    $stmt = $pdo->prepare(
+        'SELECT i.id, i.name, i.category, i.unit, i.estimated_price, SUM(mi.qty) AS total_qty
+         FROM menu_entries me
+         JOIN meal_ingredients mi ON mi.meal_id = me.meal_id
+         JOIN ingredients i ON i.id = mi.ingredient_id
+         WHERE me.cycle_id = :cid
+         GROUP BY i.id
+         ORDER BY i.name'
+    );
+    $stmt->execute([':cid' => $cycleId]);
+
+    $items = [];
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $row['total_qty'] = (float) $row['total_qty'];
+        $row['estimated_price'] = (float) $row['estimated_price'];
+        $row['buy_qty'] = purchase_qty($row['total_qty'], $row['unit']);
+        $row['line_total'] = $row['buy_qty'] * $row['estimated_price'];
+        $items[] = $row;
+    }
+
+    return $items;
+}
+
+/** Estimated spend for a cycle, with packaged items rounded up to whole units. */
+function cycle_cost(PDO $pdo, int $cycleId): float
+{
+    return array_sum(array_column(cycle_shopping_items($pdo, $cycleId), 'line_total'));
+}

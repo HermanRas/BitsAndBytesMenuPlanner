@@ -418,6 +418,11 @@ h2.page-title {
   font-weight: 700;
 }
 
+.cycle-header a.range {
+  color: var(--accent);
+  text-decoration: none;
+}
+
 .view-toggle {
   display: flex;
   background: var(--surface);

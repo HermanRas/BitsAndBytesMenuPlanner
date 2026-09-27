@@ -11,10 +11,22 @@ if ($user === null && !$guest) {
 
 $pdo = get_db();
 $isParent = $user !== null && $user['role'] === 'parent';
-$today = (new DateTimeImmutable('now'))->format('Y-m-d');
+$now = new DateTimeImmutable('today');
+$today = $now->format('Y-m-d');
+
+// ?date=Y-m-d lets the family step to tomorrow (or any day) from here.
+$viewDay = $now;
+if (isset($_GET['date'])) {
+    $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', (string) $_GET['date']);
+    if ($parsed !== false && $parsed->format('Y-m-d') === $_GET['date']) {
+        $viewDay = $parsed;
+    }
+}
+$viewDate = $viewDay->format('Y-m-d');
+$selfUrl = $viewDate === $today ? 'today.php' : 'today.php?date=' . $viewDate;
 
 $cycleStmt = $pdo->prepare('SELECT id FROM menu_cycles WHERE start_date <= :d AND end_date >= :d LIMIT 1');
-$cycleStmt->execute([':d' => $today]);
+$cycleStmt->execute([':d' => $viewDate]);
 $cycleId = $cycleStmt->fetchColumn();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user !== null) {
@@ -28,10 +40,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user !== null) {
         $mealId = (int) ($_POST['meal_id'] ?? 0);
         if (in_array($slot, ['breakfast', 'lunch', 'dinner'], true) && $mealId > 0) {
             $exists = $pdo->prepare('SELECT 1 FROM menu_entries WHERE date = :d AND slot = :s');
-            $exists->execute([':d' => $today, ':s' => $slot]);
+            $exists->execute([':d' => $viewDate, ':s' => $slot]);
             if (!$exists->fetchColumn()) {
                 $pdo->prepare('INSERT INTO menu_entries (cycle_id, date, slot, meal_id, cooked) VALUES (:cid, :d, :s, :mid, 0)')
-                    ->execute([':cid' => $cycleId, ':d' => $today, ':s' => $slot, ':mid' => $mealId]);
+                    ->execute([':cid' => $cycleId, ':d' => $viewDate, ':s' => $slot, ':mid' => $mealId]);
             }
         }
     } elseif ($action === 'remove_entry' && $isParent) {
@@ -50,11 +62,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user !== null) {
         }
     }
 
-    header('Location: today.php');
+    header('Location: ' . $selfUrl);
     exit;
 }
 
-$todayLabel = (new DateTimeImmutable('now'))->format('l, j F');
+$dayOffset = (int) $now->diff($viewDay)->format('%r%a');
+$dayTitle = match ($dayOffset) {
+    0 => 'Today',
+    1 => 'Tomorrow',
+    -1 => 'Yesterday',
+    default => $viewDay->format('l'),
+};
+$dayWord = in_array($dayOffset, [-1, 0, 1], true) ? strtolower($dayTitle) : 'on ' . $viewDay->format('D j M');
+$todayLabel = $viewDay->format('l, j F');
+$prevDate = $viewDay->modify('-1 day')->format('Y-m-d');
+$nextDate = $viewDay->modify('+1 day')->format('Y-m-d');
 
 $bySlot = ['breakfast' => null, 'lunch' => null, 'dinner' => null];
 if ($cycleId !== false) {
@@ -65,7 +87,7 @@ if ($cycleId !== false) {
          WHERE me.cycle_id = :cid AND me.date = :d
          ORDER BY CASE me.slot WHEN 'breakfast' THEN 0 WHEN 'lunch' THEN 1 ELSE 2 END, me.sort_order"
     );
-    $entriesStmt->execute([':cid' => $cycleId, ':d' => $today]);
+    $entriesStmt->execute([':cid' => $cycleId, ':d' => $viewDate]);
     foreach ($entriesStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
         $bySlot[$row['slot']] = $row;
     }
@@ -80,7 +102,7 @@ if ($user !== null) {
 
 $allMeals = $isParent ? $pdo->query('SELECT id, title FROM meals ORDER BY title')->fetchAll(PDO::FETCH_ASSOC) : [];
 
-function render_meal_card(array $entry, array $favoriteMealIds, bool $guest, bool $isParent): void
+function render_meal_card(array $entry, array $favoriteMealIds, bool $guest, bool $isParent, string $dayWord): void
 {
     $favorited = isset($favoriteMealIds[$entry['meal_id']]);
     $cooked = (bool) $entry['cooked'];
@@ -115,7 +137,7 @@ function render_meal_card(array $entry, array $favoriteMealIds, bool $guest, boo
         </form>
       <?php endif; ?>
       <?php if ($isParent): ?>
-        <form method="post" onsubmit="return confirm('Remove this meal from today?');">
+        <form method="post" onsubmit="return confirm(<?= htmlspecialchars(json_encode('Remove this meal from ' . $dayWord . '?'), ENT_QUOTES) ?>);">
           <input type="hidden" name="action" value="remove_entry">
           <input type="hidden" name="entry_id" value="<?= (int) $entry['entry_id'] ?>">
           <button type="submit" class="remove-btn" aria-label="Remove meal">✕</button>
@@ -130,7 +152,7 @@ function render_meal_card(array $entry, array $favoriteMealIds, bool $guest, boo
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Today — BitsAndBytesMenuPlanner</title>
+  <title><?= htmlspecialchars($dayTitle) ?> — BitsAndBytesMenuPlanner</title>
   <link rel="icon" href="img/Icon_32x32.png">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="img/Icon_192x192.png">
@@ -145,7 +167,7 @@ function render_meal_card(array $entry, array $favoriteMealIds, bool $guest, boo
     <header class="app-header">
       <img class="logo" src="img/Icon_128x128.png" alt="">
       <div>
-        <h1>Today</h1>
+        <h1><?= htmlspecialchars($dayTitle) ?></h1>
         <p class="subtitle"><?= htmlspecialchars($todayLabel) ?></p>
       </div>
       <div class="header-spacer"></div>
@@ -155,12 +177,26 @@ function render_meal_card(array $entry, array $favoriteMealIds, bool $guest, boo
     </header>
 
     <main class="app-content">
+      <div class="cycle-header">
+        <a class="icon-btn" href="today.php?date=<?= $prevDate ?>" aria-label="Previous day">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+        </a>
+        <?php if ($viewDate === $today): ?>
+          <span class="range"><?= htmlspecialchars($viewDay->format('D j M')) ?></span>
+        <?php else: ?>
+          <a class="range" href="today.php">Back to today</a>
+        <?php endif; ?>
+        <a class="icon-btn" href="today.php?date=<?= $nextDate ?>" aria-label="Next day">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+
       <?php foreach (['breakfast' => 'Breakfast', 'lunch' => 'Lunch', 'dinner' => 'Dinner'] as $slot => $label): ?>
         <div class="card" style="margin-bottom:1.1rem;">
           <div class="slot-label"><?= $label ?></div>
           <?php if ($bySlot[$slot] !== null): ?>
             <div style="margin-top:0.5rem;">
-              <?php render_meal_card($bySlot[$slot], $favoriteMealIds, $guest, $isParent); ?>
+              <?php render_meal_card($bySlot[$slot], $favoriteMealIds, $guest, $isParent, $dayWord); ?>
             </div>
           <?php elseif ($isParent && $cycleId !== false): ?>
             <button type="button" class="slot-line-empty" data-slot="<?= $slot ?>" onclick="openAssignModal(this)" style="margin-top:0.5rem;">
@@ -168,7 +204,7 @@ function render_meal_card(array $entry, array $favoriteMealIds, bool $guest, boo
               Add <?= $slot ?>
             </button>
           <?php elseif ($isParent): ?>
-            <p class="hint" style="margin:0.5rem 0 0;">No menu cycle covers today yet.</p>
+            <p class="hint" style="margin:0.5rem 0 0;">No menu cycle covers this day yet.</p>
           <?php else: ?>
             <p class="hint" style="margin:0.5rem 0 0;">Nothing planned yet.</p>
           <?php endif; ?>
@@ -221,7 +257,7 @@ function render_meal_card(array $entry, array $favoriteMealIds, bool $guest, boo
   <script>
     function openAssignModal(btn) {
       document.getElementById("assign-slot").value = btn.dataset.slot;
-      document.getElementById("assign-label").textContent = btn.dataset.slot[0].toUpperCase() + btn.dataset.slot.slice(1) + " today";
+      document.getElementById("assign-label").textContent = btn.dataset.slot[0].toUpperCase() + btn.dataset.slot.slice(1) + " " + <?= json_encode($dayWord) ?>;
       document.getElementById("assign-meal").value = "";
       document.getElementById("assign-modal").showModal();
     }

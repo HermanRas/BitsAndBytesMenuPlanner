@@ -43,17 +43,7 @@ $prevId = adjacent_cycle_id($pdo, $cycle['start_date'], -1);
 $nextId = adjacent_cycle_id($pdo, $cycle['start_date'], 1);
 $range = cycle_label($cycle['start_date'], $cycle['end_date']);
 
-$itemsStmt = $pdo->prepare(
-    'SELECT i.id, i.name, i.category, i.unit, i.estimated_price, SUM(mi.qty) AS total_qty
-     FROM menu_entries me
-     JOIN meal_ingredients mi ON mi.meal_id = me.meal_id
-     JOIN ingredients i ON i.id = mi.ingredient_id
-     WHERE me.cycle_id = :cid
-     GROUP BY i.id
-     ORDER BY i.name'
-);
-$itemsStmt->execute([':cid' => $cycle['id']]);
-$items = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
+$items = cycle_shopping_items($pdo, (int) $cycle['id']);
 
 $checkedStmt = $pdo->prepare('SELECT ingredient_id FROM shopping_checks WHERE cycle_id = :cid');
 $checkedStmt->execute([':cid' => $cycle['id']]);
@@ -63,7 +53,6 @@ $categoryOrder = ['produce', 'dairy', 'meat', 'bakery', 'pantry', 'spices', 'fro
 $byCategory = [];
 $totalCost = 0.0;
 foreach ($items as $item) {
-    $item['line_total'] = $item['total_qty'] * $item['estimated_price'];
     $totalCost += $item['line_total'];
     $byCategory[$item['category']][] = $item;
 }
@@ -76,6 +65,16 @@ uksort($byCategory, function ($a, $b) use ($categoryOrder) {
 function format_qty(float $qty): string
 {
     return $qty == (int) $qty ? (string) (int) $qty : rtrim(rtrim(number_format($qty, 2), '0'), '.');
+}
+
+/** "3 300g jar", plus how much the menu actually uses when that was rounded up. */
+function buy_label(array $item): string
+{
+    $label = format_qty($item['buy_qty']) . ' ' . $item['unit'];
+    if (round($item['buy_qty'], 4) !== round($item['total_qty'], 4)) {
+        $label .= ' (uses ' . format_qty($item['total_qty']) . ')';
+    }
+    return $label;
 }
 
 $budget = $pdo->query('SELECT monthly_budget FROM budget_settings WHERE id = 1')->fetchColumn();
@@ -154,7 +153,7 @@ $budgetPct = $budget !== null && $budget > 0 ? min(100, ($totalCost / $budget) *
             <label class="check-item <?= $checked ? 'checked' : '' ?>">
               <input type="checkbox" <?= $checked ? 'checked' : '' ?> disabled>
               <span class="item-name"><?= htmlspecialchars($item['name']) ?></span>
-              <span class="item-qty"><?= format_qty((float) $item['total_qty']) ?> <?= htmlspecialchars($item['unit']) ?> · R<?= number_format($item['line_total'], 2) ?></span>
+              <span class="item-qty"><?= htmlspecialchars(buy_label($item)) ?> · R<?= number_format($item['line_total'], 2) ?></span>
             </label>
           <?php else: ?>
             <form method="post">
@@ -163,7 +162,7 @@ $budgetPct = $budget !== null && $budget > 0 ? min(100, ($totalCost / $budget) *
               <label class="check-item <?= $checked ? 'checked' : '' ?>" onclick="this.closest('form').submit()">
                 <input type="checkbox" <?= $checked ? 'checked' : '' ?> tabindex="-1">
                 <span class="item-name"><?= htmlspecialchars($item['name']) ?></span>
-                <span class="item-qty"><?= format_qty((float) $item['total_qty']) ?> <?= htmlspecialchars($item['unit']) ?> · R<?= number_format($item['line_total'], 2) ?></span>
+                <span class="item-qty"><?= htmlspecialchars(buy_label($item)) ?> · R<?= number_format($item['line_total'], 2) ?></span>
               </label>
             </form>
           <?php endif; ?>
@@ -202,7 +201,7 @@ $budgetPct = $budget !== null && $budget > 0 ? min(100, ($totalCost / $budget) *
       const lines = [<?php foreach ($byCategory as $category => $categoryItems): ?>
         <?= json_encode(ucfirst((string) $category) . ':') ?>,
         <?php foreach ($categoryItems as $item): ?>
-          <?= json_encode('- ' . $item['name'] . ' (' . format_qty((float) $item['total_qty']) . ' ' . $item['unit'] . ')') ?>,
+          <?= json_encode('- ' . $item['name'] . ' (' . format_qty($item['buy_qty']) . ' ' . $item['unit'] . ')') ?>,
         <?php endforeach; ?>
       <?php endforeach; ?>];
       const text = "Shopping List — <?= addslashes($range) ?>\n\n" + lines.join("\n") + "\n\nEstimated total: R<?= number_format($totalCost, 2) ?>";

@@ -127,15 +127,7 @@ foreach ($entriesStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
 $allMeals = $isParent ? $pdo->query('SELECT id, title FROM meals ORDER BY title')->fetchAll(PDO::FETCH_ASSOC) : [];
 
 $budget = $pdo->query('SELECT monthly_budget FROM budget_settings WHERE id = 1')->fetchColumn();
-$costStmt = $pdo->prepare(
-    'SELECT COALESCE(SUM(mi.qty * i.estimated_price), 0)
-     FROM menu_entries me
-     JOIN meal_ingredients mi ON mi.meal_id = me.meal_id
-     JOIN ingredients i ON i.id = mi.ingredient_id
-     WHERE me.cycle_id = :cid'
-);
-$costStmt->execute([':cid' => $cycle['id']]);
-$cycleCost = (float) $costStmt->fetchColumn();
+$cycleCost = cycle_cost($pdo, (int) $cycle['id']);
 $budget = $budget !== false ? (float) $budget : null;
 $overBudget = $budget !== null && $cycleCost > $budget;
 $budgetPct = $budget !== null && $budget > 0 ? min(100, ($cycleCost / $budget) * 100) : 0;
