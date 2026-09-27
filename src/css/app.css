@@ -298,6 +298,42 @@ h2.page-title {
   text-overflow: ellipsis;
 }
 
+/* Today: name on its own line, actions underneath, so long names aren't
+   squeezed behind the buttons on a phone. */
+.meal-card-stacked {
+  align-items: flex-start;
+}
+
+.meal-card-stacked .meal-thumb {
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.meal-card-stacked .meal-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.meal-card-stacked .meal-title {
+  display: block;
+  color: var(--text);
+  text-decoration: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+
+.meal-card-stacked .meal-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.1rem;
+}
+
+.meal-card-stacked .meal-actions .cooked-toggle-form {
+  margin-right: auto;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;

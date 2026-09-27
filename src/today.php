@@ -107,42 +107,43 @@ function render_meal_card(array $entry, array $favoriteMealIds, bool $guest, boo
     $favorited = isset($favoriteMealIds[$entry['meal_id']]);
     $cooked = (bool) $entry['cooked'];
     ?>
-    <div class="meal-card">
-      <a href="meal-detail.php?entry=<?= (int) $entry['entry_id'] ?>" class="meal-card-link">
+    <div class="meal-card meal-card-stacked">
+      <a href="meal-detail.php?entry=<?= (int) $entry['entry_id'] ?>" class="meal-thumb" tabindex="-1" aria-hidden="true">
         <img src="<?= htmlspecialchars($entry['image'] ?: 'img/Icon_256x256.png') ?>" alt="">
-        <div class="meal-info">
-          <div class="meal-title"><?= htmlspecialchars($entry['title']) ?></div>
+      </a>
+      <div class="meal-body">
+        <a href="meal-detail.php?entry=<?= (int) $entry['entry_id'] ?>" class="meal-title"><?= htmlspecialchars($entry['title']) ?></a>
+        <div class="meal-actions">
           <?php if ($guest): ?>
             <span class="badge <?= $cooked ? 'badge-cooked' : 'badge-not-cooked' ?>"><?= $cooked ? 'Cooked' : 'Not cooked' ?></span>
+          <?php else: ?>
+            <form method="post" class="cooked-toggle-form">
+              <input type="hidden" name="action" value="toggle_cooked">
+              <input type="hidden" name="entry_id" value="<?= (int) $entry['entry_id'] ?>">
+              <button type="submit" class="badge <?= $cooked ? 'badge-cooked' : 'badge-not-cooked' ?>" style="border:none; cursor:pointer;">
+                <?php if ($cooked): ?>
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                <?php endif; ?>
+                <?= $cooked ? 'Cooked' : 'Not cooked' ?>
+              </button>
+            </form>
+            <form method="post" class="fav-form">
+              <input type="hidden" name="action" value="toggle_favorite">
+              <input type="hidden" name="meal_id" value="<?= (int) $entry['meal_id'] ?>">
+              <button type="submit" class="fav-btn <?= $favorited ? 'active' : '' ?>" aria-label="Favorite">
+                <svg viewBox="0 0 24 24" fill="<?= $favorited ? 'currentColor' : 'none' ?>" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5s-7-4.35-9.5-8.8C.8 8.4 2.4 5 5.8 5c1.9 0 3.3 1 4.2 2.4C11 6 12.4 5 14.3 5c3.4 0 5 3.4 3.3 6.7C19 16.15 12 20.5 12 20.5z"/></svg>
+              </button>
+            </form>
+          <?php endif; ?>
+          <?php if ($isParent): ?>
+            <form method="post" onsubmit="return confirm(<?= htmlspecialchars(json_encode('Remove this meal from ' . $dayWord . '?'), ENT_QUOTES) ?>);">
+              <input type="hidden" name="action" value="remove_entry">
+              <input type="hidden" name="entry_id" value="<?= (int) $entry['entry_id'] ?>">
+              <button type="submit" class="remove-btn" aria-label="Remove meal">✕</button>
+            </form>
           <?php endif; ?>
         </div>
-      </a>
-      <?php if (!$guest): ?>
-        <form method="post" class="cooked-toggle-form">
-          <input type="hidden" name="action" value="toggle_cooked">
-          <input type="hidden" name="entry_id" value="<?= (int) $entry['entry_id'] ?>">
-          <button type="submit" class="badge <?= $cooked ? 'badge-cooked' : 'badge-not-cooked' ?>" style="border:none; cursor:pointer;">
-            <?php if ($cooked): ?>
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-            <?php endif; ?>
-            <?= $cooked ? 'Cooked' : 'Not cooked' ?>
-          </button>
-        </form>
-        <form method="post" class="fav-form">
-          <input type="hidden" name="action" value="toggle_favorite">
-          <input type="hidden" name="meal_id" value="<?= (int) $entry['meal_id'] ?>">
-          <button type="submit" class="fav-btn <?= $favorited ? 'active' : '' ?>" aria-label="Favorite">
-            <svg viewBox="0 0 24 24" fill="<?= $favorited ? 'currentColor' : 'none' ?>" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5s-7-4.35-9.5-8.8C.8 8.4 2.4 5 5.8 5c1.9 0 3.3 1 4.2 2.4C11 6 12.4 5 14.3 5c3.4 0 5 3.4 3.3 6.7C19 16.15 12 20.5 12 20.5z"/></svg>
-          </button>
-        </form>
-      <?php endif; ?>
-      <?php if ($isParent): ?>
-        <form method="post" onsubmit="return confirm(<?= htmlspecialchars(json_encode('Remove this meal from ' . $dayWord . '?'), ENT_QUOTES) ?>);">
-          <input type="hidden" name="action" value="remove_entry">
-          <input type="hidden" name="entry_id" value="<?= (int) $entry['entry_id'] ?>">
-          <button type="submit" class="remove-btn" aria-label="Remove meal">✕</button>
-        </form>
-      <?php endif; ?>
+      </div>
     </div>
     <?php
 }
