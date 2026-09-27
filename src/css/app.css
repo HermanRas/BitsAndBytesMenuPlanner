@@ -298,8 +298,8 @@ h2.page-title {
   text-overflow: ellipsis;
 }
 
-/* Today: the name sits above the Cooked badge, so on a phone the badge no
-   longer takes the name's width; heart and remove stay on the right. */
+/* Today: the name gets the full width beside the photo; Cooked, heart and
+   remove share the line underneath it (heart + remove pushed right). */
 .meal-card-stacked {
   gap: 0.6rem;
 }
@@ -308,8 +308,15 @@ h2.page-title {
   white-space: nowrap;
 }
 
-.meal-card-stacked .fav-form + form {
-  margin-left: -0.4rem;
+.meal-card-stacked .meal-actions {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin: -0.5rem 0 -0.6rem;
+}
+
+.meal-card-stacked .meal-actions .fav-form {
+  margin-left: auto;
 }
 
 .meal-card-stacked .meal-thumb {
@@ -323,7 +330,7 @@ h2.page-title {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.35rem;
+  gap: 0.2rem;
 }
 
 .meal-card-stacked .meal-title {
