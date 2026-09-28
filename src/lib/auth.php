@@ -3,17 +3,36 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
 
+// The app holds no confidential data, so a login lasts a year (renewed on
+// every visit) instead of ending when the installed app is closed.
+const SESSION_LIFETIME = 365 * 24 * 60 * 60;
+
 function ensure_session(): void
 {
     if (session_status() === PHP_SESSION_NONE) {
-        session_set_cookie_params([
-            'lifetime' => 0,
+        ini_set('session.gc_maxlifetime', (string) SESSION_LIFETIME);
+
+        $cookieParams = [
+            'lifetime' => SESSION_LIFETIME,
             'path' => '/',
             'httponly' => true,
             'samesite' => 'Lax',
             'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
-        ]);
+        ];
+        session_set_cookie_params($cookieParams);
         session_start();
+
+        // PHP only sends the cookie when a session is created; re-send it so
+        // the year counts from the last visit, not from login.
+        if (!empty($_SESSION) && !headers_sent()) {
+            setcookie(session_name(), session_id(), [
+                'expires' => time() + SESSION_LIFETIME,
+                'path' => $cookieParams['path'],
+                'httponly' => $cookieParams['httponly'],
+                'samesite' => $cookieParams['samesite'],
+                'secure' => $cookieParams['secure'],
+            ]);
+        }
     }
 }
 
