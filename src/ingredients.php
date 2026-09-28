@@ -10,6 +10,13 @@ $flashError = null;
 $openAddModal = false;
 $openEditModal = null; // set to the submitted values when an edit needs to reopen with an error
 
+// Pages that link here (meal detail, meal form) pass ?return= so Back goes
+// where the user came from. Only local page URLs are accepted.
+$returnUrl = $_GET['return'] ?? '';
+if (!preg_match('/^[a-z][a-z0-9-]*\.php(\?[A-Za-z0-9_=&%-]*)?$/', $returnUrl)) {
+    $returnUrl = 'settings.php';
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_ingredient') {
     $name = trim($_POST['name'] ?? '');
     $category = in_array($_POST['category'] ?? '', $categories, true) ? $_POST['category'] : 'pantry';
@@ -87,7 +94,7 @@ foreach ($ingredients as $ing) {
 <body>
   <div class="app-shell">
     <header class="app-header">
-      <a href="settings.php" class="back-link">
+      <a href="<?= htmlspecialchars($returnUrl, ENT_QUOTES) ?>" class="back-link">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
         Back
       </a>

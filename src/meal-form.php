@@ -139,7 +139,7 @@ function ingredient_options(array $all, int $selectedId): string
         <p class="flash-error"><?= htmlspecialchars($flashError, ENT_QUOTES) ?></p>
       <?php endif; ?>
 
-      <form method="post" enctype="multipart/form-data">
+      <form method="post" enctype="multipart/form-data" id="meal-form">
         <div class="field">
           <label for="title">Title</label>
           <input type="text" id="title" name="title" value="<?= htmlspecialchars($formTitle, ENT_QUOTES) ?>" required>
@@ -172,7 +172,7 @@ function ingredient_options(array $all, int $selectedId): string
             <?php endforeach; ?>
           </div>
           <button type="button" class="btn btn-secondary btn-small" onclick="addIngredientRow()">+ Add ingredient</button>
-          <p class="hint">Only ingredients already in the <a href="ingredients.php">catalog</a> can be used — add a new one there first if it's missing.</p>
+          <p class="hint">Only ingredients already in the <a href="ingredients.php?return=<?= urlencode($isEdit ? 'meal-form.php?id=' . $mealId : 'meal-form.php') ?>">catalog</a> can be used — add a new one there first if it's missing.</p>
         </div>
 
         <div class="field">
@@ -200,6 +200,35 @@ function ingredient_options(array $all, int $selectedId): string
       const tpl = document.getElementById("ingredient-row-template").innerHTML.replaceAll("__INDEX__", ingredientRowIndex++);
       document.getElementById("ingredient-rows").insertAdjacentHTML("beforeend", tpl);
     }
+
+    // Warn before leaving with unsaved edits. A re-render after a failed save
+    // still holds the user's unsaved input, so it starts dirty.
+    const mealForm = document.getElementById("meal-form");
+    let formDirty = <?= $_SERVER['REQUEST_METHOD'] === 'POST' ? 'true' : 'false' ?>;
+    let leavingConfirmed = false;
+    const leaveMessage = "You have unsaved changes to this meal. Leave without saving?";
+    mealForm.addEventListener("input", () => { formDirty = true; });
+    mealForm.addEventListener("change", () => { formDirty = true; });
+    document.getElementById("ingredient-rows").addEventListener("click", (e) => {
+      if (e.target.closest("button")) formDirty = true;
+    });
+    mealForm.addEventListener("submit", () => { formDirty = false; });
+    // In-app links get a confirm() — beforeunload alone is unreliable in
+    // mobile Safari / installed PWAs.
+    document.addEventListener("click", (e) => {
+      const link = e.target.closest("a[href]");
+      if (!link || !formDirty) return;
+      if (confirm(leaveMessage)) {
+        leavingConfirmed = true;
+      } else {
+        e.preventDefault();
+      }
+    });
+    window.addEventListener("beforeunload", (e) => {
+      if (!formDirty || leavingConfirmed) return;
+      e.preventDefault();
+      e.returnValue = "";
+    });
   </script>
 </body>
 </html>
