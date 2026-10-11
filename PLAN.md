@@ -26,7 +26,8 @@ guaranteed accurate. Treat them as flavor, not spec.
   edit the menu, or reorder meals. Children/guests are read-only + can favorite
   and mark meals cooked.
 - **Cooked tracking**: meals default to "not cooked"; can be toggled to
-  "cooked". Parents can drag-and-drop reorder meals that are still "not cooked".
+  "cooked". Parents can swap a meal that is still "not cooked" with an earlier
+  uncooked meal anywhere in the cycle (a swap button, not drag-and-drop).
 - **Shopping list**: auto-generated from selected meals/date range, grouped by
   category (produce, dairy, meat, etc.), shareable with family.
 - **Meals**: title, description, ingredients, prep steps, image. Searchable by
@@ -220,6 +221,8 @@ after every edit rather than waiting for a single "save".
 schedule them, rearrange by dragging) and sees a live warning when a
 cycle goes over budget. Verified with real ingredient math, a real
 browser drag gesture, and the cooked-meal lock in both directions.
+(Drag-and-drop was later replaced by a swap button; see "Post-launch —
+swap instead of drag" below.)
 
 Also fixed a real, previously-undetected bug from Phase 5: `mockup.js`'s
 global `.fav-btn` click handler called `preventDefault()` on every such
@@ -524,6 +527,32 @@ first time: built the image standalone, ran it with zero volumes at
 all, confirmed a fresh container logs in as the demo account, reaches
 `today.php`, and still 404s every blocked path — the exact sequence the
 CI workflow runs.
+
+### Post-launch — swap instead of drag
+Phase 7's drag-and-drop never worked on phones: HTML5 drag events don't
+fire on touch, so a drag just scrolled the page. Since the family uses the
+app almost entirely on phones, all drag code was removed (handle,
+`move_entry` action, JS, `.drag-handle` / `[draggable]` CSS). It was
+replaced by a parent-only swap button on each uncooked entry in
+`week.php`. The button opens `dialog#swap-modal`, which lists every
+**uncooked** entry in the **whole cycle** that comes **earlier** (by
+date, then breakfast < lunch < dinner, via `slot_key()`). The new
+`swap_entry` action swaps the two entries' `meal_id`s in a transaction.
+The server checks that both entries are in the current cycle, both are
+uncooked, and the other entry is earlier. The earliest uncooked meal
+shows a "No earlier" message with Swap disabled.
+
+Verified in a throwaway container with a fixture covering two weeks and
+a cooked entry, using Playwright at 390px and 320px with touch:
+- the list order and contents are correct, the cooked entry is never
+  offered, and meals from the previous week appear;
+- a swap moves only the two meals;
+- the empty state works, and the modal fits at 320px with no
+  horizontal scroll;
+- children see no swap button.
+
+Raw POSTs that tried to swap with a later, cooked, missing or
+same entry, or that came from a child, all left the data unchanged.
 
 ---
 

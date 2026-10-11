@@ -530,12 +530,6 @@ h2.page-title {
   font-size: 0.9rem;
 }
 
-.slot-line .drag-handle {
-  color: var(--text-muted);
-  flex-shrink: 0;
-  cursor: grab;
-}
-
 .slot-line .slot-tag {
   width: 62px;
   flex-shrink: 0;
@@ -543,10 +537,6 @@ h2.page-title {
   text-transform: uppercase;
   color: var(--text-muted);
   font-weight: 700;
-}
-
-.slot-line[draggable="true"]:active {
-  opacity: 0.6;
 }
 
 .slot-line-empty {

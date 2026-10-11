@@ -39,6 +39,12 @@ if (isset($_GET['week'])) {
 $thisWeek = $weeks[$weekIndex];
 $backHere = 'week.php?cycle=' . $cycle['id'] . '&week=' . $weekIndex;
 
+/** Sortable key for an entry's position in time: date, then breakfast < lunch < dinner. */
+function slot_key(array $entry): string
+{
+    return $entry['date'] . array_search($entry['slot'], ['breakfast', 'lunch', 'dinner'], true);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user !== null) {
     $action = $_POST['action'] ?? '';
 
@@ -60,29 +66,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user !== null) {
     } elseif ($action === 'remove_entry' && $isParent) {
         $entryId = (int) ($_POST['entry_id'] ?? 0);
         $pdo->prepare('DELETE FROM menu_entries WHERE id = :id')->execute([':id' => $entryId]);
-    } elseif ($action === 'move_entry' && $isParent) {
-        $entryId = (int) ($_POST['entry_id'] ?? 0);
-        $targetDate = $_POST['target_date'] ?? '';
-        $targetSlot = $_POST['target_slot'] ?? '';
+    } elseif ($action === 'swap_entry' && $isParent) {
+        // Swap the meals of two uncooked entries in this cycle; the other entry must be earlier.
+        $entryStmt = $pdo->prepare('SELECT * FROM menu_entries WHERE id = :id AND cycle_id = :cid AND cooked = 0');
+        $entryStmt->execute([':id' => (int) ($_POST['entry_id'] ?? 0), ':cid' => $cycle['id']]);
+        $src = $entryStmt->fetch(PDO::FETCH_ASSOC);
+        $entryStmt->execute([':id' => (int) ($_POST['other_id'] ?? 0), ':cid' => $cycle['id']]);
+        $other = $entryStmt->fetch(PDO::FETCH_ASSOC);
 
-        $srcStmt = $pdo->prepare('SELECT * FROM menu_entries WHERE id = :id');
-        $srcStmt->execute([':id' => $entryId]);
-        $src = $srcStmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($src !== false && !$src['cooked'] && in_array($targetDate, $thisWeek, true) && in_array($targetSlot, ['breakfast', 'lunch', 'dinner'], true)) {
-            $targetStmt = $pdo->prepare('SELECT * FROM menu_entries WHERE date = :d AND slot = :s');
-            $targetStmt->execute([':d' => $targetDate, ':s' => $targetSlot]);
-            $targetEntry = $targetStmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($targetEntry === false) {
-                $pdo->prepare('UPDATE menu_entries SET date = :d, slot = :s WHERE id = :id')
-                    ->execute([':d' => $targetDate, ':s' => $targetSlot, ':id' => $entryId]);
-            } elseif (!$targetEntry['cooked'] && (int) $targetEntry['id'] !== $entryId) {
-                $pdo->prepare('UPDATE menu_entries SET date = :d, slot = :s WHERE id = :id')
-                    ->execute([':d' => $targetDate, ':s' => $targetSlot, ':id' => $entryId]);
-                $pdo->prepare('UPDATE menu_entries SET date = :d, slot = :s WHERE id = :id')
-                    ->execute([':d' => $src['date'], ':s' => $src['slot'], ':id' => $targetEntry['id']]);
-            }
+        if ($src !== false && $other !== false && slot_key($other) < slot_key($src)) {
+            $pdo->beginTransaction();
+            $swap = $pdo->prepare('UPDATE menu_entries SET meal_id = :mid WHERE id = :id');
+            $swap->execute([':mid' => $other['meal_id'], ':id' => $src['id']]);
+            $swap->execute([':mid' => $src['meal_id'], ':id' => $other['id']]);
+            $pdo->commit();
         }
     }
 
@@ -126,6 +123,28 @@ foreach ($entriesStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
 
 $allMeals = $isParent ? $pdo->query('SELECT id, title FROM meals ORDER BY title')->fetchAll(PDO::FETCH_ASSOC) : [];
 
+// Every uncooked entry in the cycle, oldest first; the swap modal shows those older than the chosen one.
+$swapCandidates = [];
+if ($isParent) {
+    $candStmt = $pdo->prepare(
+        "SELECT me.id, me.date, me.slot, m.title
+         FROM menu_entries me
+         JOIN meals m ON m.id = me.meal_id
+         WHERE me.cycle_id = :cid AND me.cooked = 0"
+    );
+    $candStmt->execute([':cid' => $cycle['id']]);
+    foreach ($candStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $d = new DateTimeImmutable($row['date']);
+        $swapCandidates[] = [
+            'id' => (int) $row['id'],
+            'key' => slot_key($row),
+            'title' => $row['title'],
+            'when' => $d->format('D j M') . ' · ' . ucfirst($row['slot']),
+        ];
+    }
+    usort($swapCandidates, fn($a, $b) => strcmp($a['key'], $b['key']));
+}
+
 $budget = $pdo->query('SELECT monthly_budget FROM budget_settings WHERE id = 1')->fetchColumn();
 $cycleCost = cycle_cost($pdo, (int) $cycle['id']);
 $budget = $budget !== false ? (float) $budget : null;
@@ -152,8 +171,14 @@ $weekRange = cycle_label($thisWeek[0], end($thisWeek));
     .slot-line .cooked-mini svg { width: 20px; height: 20px; }
     .slot-line .cooked-mini.done { color: var(--accent-strong); }
     .slot-line form { display: contents; }
-    .slot-line[draggable="true"] .drag-handle { cursor: grab; color: var(--text-muted); }
-    .slot-line[draggable="true"]:active { opacity: 0.5; }
+    .slot-line .swap-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0.2rem; }
+    .slot-line .swap-btn svg { width: 18px; height: 18px; }
+    dialog#swap-modal { border: none; border-radius: 18px; padding: 1.25rem; width: min(380px, calc(100vw - 3rem)); max-height: 80vh; background: var(--surface); color: var(--text); }
+    dialog#swap-modal::backdrop { background: rgba(0, 0, 0, 0.5); }
+    dialog#swap-modal h3 { margin-top: 0; }
+    #swap-list { max-height: 50vh; overflow-y: auto; }
+    #swap-list .check-item { cursor: pointer; }
+    #swap-list .item-when { display: block; font-size: 0.78rem; color: var(--text-muted); }
   </style>
 </head>
 <body>
@@ -205,7 +230,7 @@ $weekRange = cycle_label($thisWeek[0], end($thisWeek));
       </div>
 
       <?php if ($isParent): ?>
-        <p class="hint" style="margin-bottom:0.75rem;">Drag <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg> to move meals that aren't cooked yet.</p>
+        <p class="hint" style="margin-bottom:0.75rem;">Tap <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/></svg> to swap a meal that isn't cooked yet with an earlier one.</p>
       <?php endif; ?>
 
       <?php foreach ($thisWeek as $i => $date): ?>
@@ -217,15 +242,15 @@ $weekRange = cycle_label($thisWeek[0], end($thisWeek));
           </div>
           <?php foreach (['breakfast', 'lunch', 'dinner'] as $slot): ?>
             <?php if (isset($byDate[$date][$slot])): ?>
-              <?php $entry = $byDate[$date][$slot]; $cooked = (bool) $entry['cooked']; $draggable = $isParent && !$cooked; ?>
-              <div class="slot-line" data-date="<?= $date ?>" data-slot="<?= $slot ?>" data-entry-id="<?= (int) $entry['entry_id'] ?>" <?= $draggable ? 'draggable="true"' : '' ?>>
-                <?php if ($isParent): ?>
-                  <span class="drag-handle" style="<?= $draggable ? '' : 'visibility:hidden;' ?>">
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
-                  </span>
-                <?php endif; ?>
+              <?php $entry = $byDate[$date][$slot]; $cooked = (bool) $entry['cooked']; ?>
+              <div class="slot-line">
                 <span class="slot-tag"><?= ucfirst($slot) ?></span>
                 <a href="meal-detail.php?entry=<?= (int) $entry['entry_id'] ?>"><?= htmlspecialchars($entry['title']) ?></a>
+                <?php if ($isParent && !$cooked): ?>
+                  <button type="button" class="swap-btn" aria-label="Swap meal" data-entry-id="<?= (int) $entry['entry_id'] ?>" data-key="<?= htmlspecialchars(slot_key(['date' => $date, 'slot' => $slot])) ?>" data-label="<?= htmlspecialchars($entry['title'] . ' — ' . $dayNames[$i] . ' ' . $slot) ?>" onclick="openSwapModal(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/></svg>
+                  </button>
+                <?php endif; ?>
                 <?php if (!$guest): ?>
                   <form method="post">
                     <input type="hidden" name="action" value="toggle_cooked">
@@ -301,12 +326,20 @@ $weekRange = cycle_label($thisWeek[0], end($thisWeek));
     </form>
   </dialog>
 
-  <form method="post" id="move-form" style="display:none;">
-    <input type="hidden" name="action" value="move_entry">
-    <input type="hidden" name="entry_id" id="move-entry-id">
-    <input type="hidden" name="target_date" id="move-target-date">
-    <input type="hidden" name="target_slot" id="move-target-slot">
-  </form>
+  <dialog id="swap-modal">
+    <h3>Swap meal</h3>
+    <p class="hint" id="swap-label" style="margin-top:-0.5rem;"></p>
+    <form method="post">
+      <input type="hidden" name="action" value="swap_entry">
+      <input type="hidden" name="entry_id" id="swap-entry-id">
+      <div id="swap-list"></div>
+      <p class="hint" id="swap-empty" style="display:none;">No earlier uncooked meals in this cycle to swap with.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('swap-modal').close()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="swap-submit">Swap</button>
+      </div>
+    </form>
+  </dialog>
 
   <script>
     function openAssignModal(btn) {
@@ -317,22 +350,35 @@ $weekRange = cycle_label($thisWeek[0], end($thisWeek));
       document.getElementById("assign-modal").showModal();
     }
 
-    let dragged = null;
-    document.querySelectorAll(".slot-line[draggable='true']").forEach((row) => {
-      row.addEventListener("dragstart", () => { dragged = row; row.style.opacity = "0.4"; });
-      row.addEventListener("dragend", () => { row.style.opacity = "1"; });
-    });
-    document.querySelectorAll(".slot-line, .slot-line-empty").forEach((target) => {
-      target.addEventListener("dragover", (e) => { if (dragged) e.preventDefault(); });
-      target.addEventListener("drop", (e) => {
-        e.preventDefault();
-        if (!dragged) return;
-        document.getElementById("move-entry-id").value = dragged.dataset.entryId;
-        document.getElementById("move-target-date").value = target.dataset.date;
-        document.getElementById("move-target-slot").value = target.dataset.slot;
-        document.getElementById("move-form").submit();
-      });
-    });
+    const swapCandidates = <?= json_encode($swapCandidates, JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+
+    function openSwapModal(btn) {
+      const list = document.getElementById("swap-list");
+      const older = swapCandidates.filter((c) => c.key < btn.dataset.key);
+      document.getElementById("swap-entry-id").value = btn.dataset.entryId;
+      document.getElementById("swap-label").textContent = btn.dataset.label;
+      list.replaceChildren(...older.map((c) => {
+        const label = document.createElement("label");
+        label.className = "check-item";
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = "other_id";
+        radio.value = c.id;
+        radio.required = true;
+        const text = document.createElement("span");
+        text.className = "item-name";
+        text.textContent = c.title;
+        const when = document.createElement("span");
+        when.className = "item-when";
+        when.textContent = c.when;
+        text.append(when);
+        label.append(radio, text);
+        return label;
+      }));
+      document.getElementById("swap-empty").style.display = older.length ? "none" : "";
+      document.getElementById("swap-submit").disabled = !older.length;
+      document.getElementById("swap-modal").showModal();
+    }
   </script>
   <?php endif; ?>
 
