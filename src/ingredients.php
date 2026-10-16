@@ -69,6 +69,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_i
                 ':price' => (float) $price,
                 ':id' => $id,
             ]);
+            // Saving is how a "price changed" mark from the shopping list gets resolved.
+            $pdo->prepare('DELETE FROM price_flags WHERE ingredient_id = :id')->execute([':id' => $id]);
         }
     }
 }
@@ -78,6 +80,7 @@ $byCategory = [];
 foreach ($ingredients as $ing) {
     $byCategory[$ing['category']][] = $ing;
 }
+$flaggedIds = array_flip($pdo->query('SELECT ingredient_id FROM price_flags')->fetchAll(PDO::FETCH_COLUMN));
 ?>
 <!doctype html>
 <html lang="en" <?= theme_html_attrs($user) ?>>
@@ -111,6 +114,13 @@ foreach ($ingredients as $ing) {
         <p class="flash-error"><?= htmlspecialchars($flashError, ENT_QUOTES) ?></p>
       <?php endif; ?>
 
+      <?php if (!empty($flaggedIds)): ?>
+        <p class="hint" style="margin-bottom:1rem;">
+          <span class="price-flag-badge" style="margin-left:0;">Price changed</span>
+          <?= count($flaggedIds) ?> marked on the shopping list — tap one, enter the new price and Save to clear it.
+        </p>
+      <?php endif; ?>
+
       <?php if (empty($ingredients)): ?>
         <p class="hint">No ingredients yet — add the first one below.</p>
       <?php endif; ?>
@@ -128,7 +138,7 @@ foreach ($ingredients as $ing) {
             data-price="<?= htmlspecialchars((string) $ing['estimated_price'], ENT_QUOTES) ?>"
             onclick="openEditIngredient(this)"
           >
-            <span class="item-name"><?= htmlspecialchars($ing['name']) ?></span>
+            <span class="item-name"><?= htmlspecialchars($ing['name']) ?><?php if (isset($flaggedIds[$ing['id']])): ?><span class="price-flag-badge">Price changed</span><?php endif; ?></span>
             <span class="item-qty">
               <?= htmlspecialchars($ing['unit']) ?> · R<?= number_format((float) $ing['estimated_price'], 2) ?>
             </span>

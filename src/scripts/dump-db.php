@@ -10,7 +10,7 @@ require __DIR__ . '/../lib/db.php';
 
 $pdo = get_db();
 
-$tables = ['users', 'ingredients', 'meals', 'meal_ingredients', 'menu_cycles', 'menu_entries', 'budget_settings', 'favorites', 'feedback'];
+$tables = ['users', 'ingredients', 'meals', 'meal_ingredients', 'menu_cycles', 'menu_entries', 'budget_settings', 'favorites', 'feedback', 'household_items'];
 
 foreach ($tables as $table) {
     $count = (int) $pdo->query("SELECT COUNT(*) FROM $table")->fetchColumn();

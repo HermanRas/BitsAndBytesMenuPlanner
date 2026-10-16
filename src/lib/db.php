@@ -24,8 +24,11 @@ function get_db(): PDO
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->exec('PRAGMA foreign_keys = ON');
 
+    // Every statement in schema.sql is CREATE ... IF NOT EXISTS, so applying
+    // it on each connection is a cheap no-op that also adds any tables a new
+    // release introduced to an existing (e.g. production) database.
+    apply_schema($pdo);
     if ($isNew) {
-        apply_schema($pdo);
         bootstrap_demo_data($pdo);
     }
 

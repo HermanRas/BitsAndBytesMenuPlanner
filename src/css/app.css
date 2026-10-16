@@ -13,6 +13,7 @@
   --accent-contrast: #FFFFFF;
   --border: #D8D8D8;
   --danger: #C0392B;
+  --price-flag: #B9770E;
   --shell-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
 }
 
@@ -25,6 +26,7 @@
   --accent-strong: hsl(var(--accent-h) 45% 45%);
   --accent-contrast: #111214;
   --border: #3A3D40;
+  --price-flag: #D68910;
   --shell-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
@@ -38,6 +40,7 @@
     --accent-strong: hsl(var(--accent-h) 45% 45%);
     --accent-contrast: #111214;
     --border: #3A3D40;
+    --price-flag: #D68910;
     --shell-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   }
 }
@@ -771,6 +774,59 @@ button.check-item {
 .check-item.checked .item-name {
   text-decoration: line-through;
   color: var(--text-muted);
+}
+
+/* Shopping-list row with a second, right-hand "price changed" toggle. The
+   tick-off part keeps the whole left side as its tap target. */
+.check-item .check-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.price-flag {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+}
+
+.price-flag svg {
+  width: 16px;
+  height: 16px;
+}
+
+.price-flag.on {
+  background: var(--price-flag);
+  border-color: var(--price-flag);
+  color: #FFFFFF;
+}
+
+.price-flag:disabled {
+  cursor: default;
+}
+
+.price-flag-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: var(--price-flag);
+  color: #FFFFFF;
+  font-size: 0.7rem;
+  font-weight: 700;
+  vertical-align: middle;
 }
 
 /* Forms (login / settings) */

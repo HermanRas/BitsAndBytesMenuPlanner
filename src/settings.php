@@ -309,6 +309,7 @@ if ($favorites !== null) {
       <h3 class="section-heading">Meals &amp; Ingredients</h3>
       <a href="meals.php" class="btn btn-secondary">Manage Meals</a>
       <a href="ingredients.php" class="btn btn-secondary" style="margin-top:0.6rem;">Manage Ingredients</a>
+      <a href="household.php" class="btn btn-secondary" style="margin-top:0.6rem;">Manage Household Items</a>
 
       <h3 class="section-heading">Menu Cycle</h3>
       <a href="copy-cycle.php" class="btn btn-secondary">Copy a Previous Cycle</a>

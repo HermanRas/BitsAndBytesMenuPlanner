@@ -39,6 +39,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user !== null && ($_POST['action']
     exit;
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user !== null && ($_POST['action'] ?? '') === 'toggle_household_check') {
+    $itemId = (int) ($_POST['item_id'] ?? 0);
+    $deleted = $pdo->prepare('DELETE FROM household_checks WHERE cycle_id = :cid AND item_id = :iid');
+    $deleted->execute([':cid' => $cycle['id'], ':iid' => $itemId]);
+    if ($deleted->rowCount() === 0) {
+        $pdo->prepare('INSERT INTO household_checks (cycle_id, item_id) VALUES (:cid, :iid)')
+            ->execute([':cid' => $cycle['id'], ':iid' => $itemId]);
+    }
+    header('Location: ' . $backHere);
+    exit;
+}
+
+// "Price changed" marks live on the item, not the cycle, so they survive
+// until someone updates the price at home (saving the item clears them).
+$priceFlagTables = [
+    'ingredient' => ['table' => 'price_flags', 'column' => 'ingredient_id'],
+    'household' => ['table' => 'household_price_flags', 'column' => 'item_id'],
+];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user !== null && ($_POST['action'] ?? '') === 'toggle_price_flag'
+    && isset($priceFlagTables[$_POST['kind'] ?? ''])) {
+    ['table' => $table, 'column' => $column] = $priceFlagTables[$_POST['kind']];
+    $id = (int) ($_POST['id'] ?? 0);
+    $deleted = $pdo->prepare("DELETE FROM $table WHERE $column = :id");
+    $deleted->execute([':id' => $id]);
+    if ($deleted->rowCount() === 0) {
+        $pdo->prepare("INSERT INTO $table ($column) VALUES (:id)")->execute([':id' => $id]);
+    }
+    header('Location: ' . $backHere);
+    exit;
+}
+
 $prevId = adjacent_cycle_id($pdo, $cycle['start_date'], -1);
 $nextId = adjacent_cycle_id($pdo, $cycle['start_date'], 1);
 $range = cycle_label($cycle['start_date'], $cycle['end_date']);
@@ -49,18 +81,46 @@ $checkedStmt = $pdo->prepare('SELECT ingredient_id FROM shopping_checks WHERE cy
 $checkedStmt->execute([':cid' => $cycle['id']]);
 $checkedIds = array_flip($checkedStmt->fetchAll(PDO::FETCH_COLUMN));
 
-$categoryOrder = ['produce', 'dairy', 'meat', 'bakery', 'pantry', 'spices', 'frozen'];
-$byCategory = [];
-$totalCost = 0.0;
-foreach ($items as $item) {
-    $totalCost += $item['line_total'];
-    $byCategory[$item['category']][] = $item;
+$householdItems = household_shopping_items($pdo);
+
+$householdCheckedStmt = $pdo->prepare('SELECT item_id FROM household_checks WHERE cycle_id = :cid');
+$householdCheckedStmt->execute([':cid' => $cycle['id']]);
+$householdCheckedIds = array_flip($householdCheckedStmt->fetchAll(PDO::FETCH_COLUMN));
+
+/** Items grouped by category in the given order (unknown categories last), plus their summed cost. */
+function group_by_category(array $items, array $categoryOrder): array
+{
+    $byCategory = [];
+    $total = 0.0;
+    foreach ($items as $item) {
+        $total += $item['line_total'];
+        $byCategory[$item['category']][] = $item;
+    }
+    uksort($byCategory, function ($a, $b) use ($categoryOrder) {
+        $ai = array_search($a, $categoryOrder, true);
+        $bi = array_search($b, $categoryOrder, true);
+        return ($ai === false ? 99 : $ai) <=> ($bi === false ? 99 : $bi);
+    });
+    return [$byCategory, $total];
 }
-uksort($byCategory, function ($a, $b) use ($categoryOrder) {
-    $ai = array_search($a, $categoryOrder, true);
-    $bi = array_search($b, $categoryOrder, true);
-    return ($ai === false ? 99 : $ai) <=> ($bi === false ? 99 : $bi);
-});
+
+[$byCategory, $mealsCost] = group_by_category($items, ['produce', 'dairy', 'meat', 'bakery', 'pantry', 'spices', 'frozen']);
+[$householdByCategory, $householdCost] = group_by_category($householdItems, HOUSEHOLD_CATEGORIES);
+$totalCost = $mealsCost + $householdCost;
+
+$flaggedIds = [];
+foreach ($priceFlagTables as $kind => ['table' => $table, 'column' => $column]) {
+    $flaggedIds[$kind] = array_flip($pdo->query("SELECT $column FROM $table")->fetchAll(PDO::FETCH_COLUMN));
+}
+
+// The two halves of the list share markup; only the toggle action and the
+// checked/flagged-state tables differ.
+$sections = [
+    ['heading' => null, 'byCategory' => $byCategory, 'checked' => $checkedIds, 'action' => 'toggle_check', 'field' => 'ingredient_id', 'kind' => 'ingredient'],
+    ['heading' => 'Household', 'byCategory' => $householdByCategory, 'checked' => $householdCheckedIds, 'action' => 'toggle_household_check', 'field' => 'item_id', 'kind' => 'household'],
+];
+
+const PRICE_TAG_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>';
 
 function format_qty(float $qty): string
 {
@@ -130,6 +190,9 @@ $budgetPct = $budget !== null && $budget > 0 ? min(100, ($totalCost / $budget) *
       <?php if ($budget !== null): ?>
         <div class="budget-card">
           <div class="row"><span>Estimated cost</span><span>R<?= number_format($totalCost, 2) ?></span></div>
+          <?php if (!empty($householdItems)): ?>
+            <p class="budget-note">Meals R<?= number_format($mealsCost, 2) ?> · Household R<?= number_format($householdCost, 2) ?></p>
+          <?php endif; ?>
           <div class="progress-track">
             <div class="progress-fill <?= $overBudget ? 'over-budget' : '' ?>" style="width:<?= $budgetPct ?>%;"></div>
           </div>
@@ -145,27 +208,53 @@ $budgetPct = $budget !== null && $budget > 0 ? min(100, ($totalCost / $budget) *
         <p class="hint">No meals planned in this cycle yet — nothing to shop for.</p>
       <?php endif; ?>
 
-      <?php foreach ($byCategory as $category => $categoryItems): ?>
-        <div class="category-heading"><?= htmlspecialchars(ucfirst($category)) ?></div>
-        <?php foreach ($categoryItems as $item): ?>
-          <?php $checked = isset($checkedIds[$item['id']]); ?>
-          <?php if ($guest): ?>
-            <label class="check-item <?= $checked ? 'checked' : '' ?>">
-              <input type="checkbox" <?= $checked ? 'checked' : '' ?> disabled>
-              <span class="item-name"><?= htmlspecialchars($item['name']) ?></span>
-              <span class="item-qty"><?= htmlspecialchars(buy_label($item)) ?> · R<?= number_format($item['line_total'], 2) ?></span>
-            </label>
-          <?php else: ?>
-            <form method="post">
-              <input type="hidden" name="action" value="toggle_check">
-              <input type="hidden" name="ingredient_id" value="<?= (int) $item['id'] ?>">
-              <label class="check-item <?= $checked ? 'checked' : '' ?>" onclick="this.closest('form').submit()">
-                <input type="checkbox" <?= $checked ? 'checked' : '' ?> tabindex="-1">
+      <?php if (!$guest && (!empty($items) || !empty($householdItems))): ?>
+        <?php $flagCount = count($flaggedIds['ingredient']) + count($flaggedIds['household']); ?>
+        <p class="hint" style="margin-top:0.75rem;">
+          Shelf price different? Tap the tag on the right to mark it, then update it at home.
+          <?php if ($flagCount > 0): ?>
+            <strong><?= $flagCount ?> marked</strong> — see <a href="ingredients.php?return=<?= urlencode($backHere) ?>">Ingredients</a> / <a href="household.php?return=<?= urlencode($backHere) ?>">Household</a>.
+          <?php endif; ?>
+        </p>
+      <?php endif; ?>
+
+      <?php foreach ($sections as $section): ?>
+        <?php if ($section['heading'] !== null && !empty($section['byCategory'])): ?>
+          <h3 class="section-heading"><?= htmlspecialchars($section['heading']) ?></h3>
+        <?php endif; ?>
+        <?php foreach ($section['byCategory'] as $category => $categoryItems): ?>
+          <div class="category-heading"><?= htmlspecialchars(ucfirst($category)) ?></div>
+          <?php foreach ($categoryItems as $item): ?>
+            <?php
+              $checked = isset($section['checked'][$item['id']]);
+              $flagged = isset($flaggedIds[$section['kind']][$item['id']]);
+              $flagLabel = $flagged ? 'Price change marked — tap to unmark' : 'Mark price as changed';
+            ?>
+            <?php if ($guest): ?>
+              <div class="check-item <?= $checked ? 'checked' : '' ?>">
+                <input type="checkbox" <?= $checked ? 'checked' : '' ?> disabled>
                 <span class="item-name"><?= htmlspecialchars($item['name']) ?></span>
                 <span class="item-qty"><?= htmlspecialchars(buy_label($item)) ?> · R<?= number_format($item['line_total'], 2) ?></span>
-              </label>
-            </form>
-          <?php endif; ?>
+                <button type="button" class="price-flag <?= $flagged ? 'on' : '' ?>" disabled aria-label="<?= $flagged ? 'Price change marked' : 'Price unchanged' ?>"><?= PRICE_TAG_ICON ?></button>
+              </div>
+            <?php else: ?>
+              <div class="check-item <?= $checked ? 'checked' : '' ?>">
+                <form method="post" class="check-main" onclick="this.submit()">
+                  <input type="hidden" name="action" value="<?= $section['action'] ?>">
+                  <input type="hidden" name="<?= $section['field'] ?>" value="<?= (int) $item['id'] ?>">
+                  <input type="checkbox" <?= $checked ? 'checked' : '' ?> tabindex="-1" aria-label="Bought <?= htmlspecialchars($item['name'], ENT_QUOTES) ?>">
+                  <span class="item-name"><?= htmlspecialchars($item['name']) ?></span>
+                  <span class="item-qty"><?= htmlspecialchars(buy_label($item)) ?> · R<?= number_format($item['line_total'], 2) ?></span>
+                </form>
+                <form method="post">
+                  <input type="hidden" name="action" value="toggle_price_flag">
+                  <input type="hidden" name="kind" value="<?= $section['kind'] ?>">
+                  <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
+                  <button type="submit" class="price-flag <?= $flagged ? 'on' : '' ?>" aria-pressed="<?= $flagged ? 'true' : 'false' ?>" aria-label="<?= $flagLabel ?>" title="<?= $flagLabel ?>"><?= PRICE_TAG_ICON ?></button>
+                </form>
+              </div>
+            <?php endif; ?>
+          <?php endforeach; ?>
         <?php endforeach; ?>
       <?php endforeach; ?>
 
@@ -198,7 +287,7 @@ $budgetPct = $budget !== null && $budget > 0 ? min(100, ($totalCost / $budget) *
   <script src="<?= asset_url('js/mockup.js') ?>"></script>
   <script>
     (function () {
-      const lines = [<?php foreach ($byCategory as $category => $categoryItems): ?>
+      const lines = [<?php foreach (array_merge($byCategory, $householdByCategory) as $category => $categoryItems): ?>
         <?= json_encode(ucfirst((string) $category) . ':') ?>,
         <?php foreach ($categoryItems as $item): ?>
           <?= json_encode('- ' . $item['name'] . ' (' . format_qty($item['buy_qty']) . ' ' . $item['unit'] . ')') ?>,

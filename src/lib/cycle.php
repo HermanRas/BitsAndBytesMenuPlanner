@@ -179,8 +179,38 @@ function cycle_shopping_items(PDO $pdo, int $cycleId): array
     return $items;
 }
 
-/** Estimated spend for a cycle, with packaged items rounded up to whole units. */
+/** Fixed category order for household items, used by the catalog and the shopping list. */
+const HOUSEHOLD_CATEGORIES = ['cleaning', 'self care', 'paper & bags', 'snacks & drinks', 'pets', 'other'];
+
+/**
+ * Household items that go on every cycle's shopping list (monthly_qty > 0),
+ * with the same buy_qty / line_total fields as cycle_shopping_items().
+ * @return list<array{id: int, name: string, category: string, unit: string, estimated_price: float, total_qty: float, buy_qty: float, line_total: float}>
+ */
+function household_shopping_items(PDO $pdo): array
+{
+    $rows = $pdo->query(
+        'SELECT id, name, category, unit, estimated_price, monthly_qty AS total_qty
+         FROM household_items
+         WHERE monthly_qty > 0
+         ORDER BY name'
+    )->fetchAll(PDO::FETCH_ASSOC);
+
+    $items = [];
+    foreach ($rows as $row) {
+        $row['total_qty'] = (float) $row['total_qty'];
+        $row['estimated_price'] = (float) $row['estimated_price'];
+        $row['buy_qty'] = purchase_qty($row['total_qty'], $row['unit']);
+        $row['line_total'] = $row['buy_qty'] * $row['estimated_price'];
+        $items[] = $row;
+    }
+
+    return $items;
+}
+
+/** Estimated spend for a cycle — meal ingredients plus monthly household items, packaged items rounded up to whole units. */
 function cycle_cost(PDO $pdo, int $cycleId): float
 {
-    return array_sum(array_column(cycle_shopping_items($pdo, $cycleId), 'line_total'));
+    return array_sum(array_column(cycle_shopping_items($pdo, $cycleId), 'line_total'))
+        + array_sum(array_column(household_shopping_items($pdo), 'line_total'));
 }

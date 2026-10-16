@@ -77,6 +77,37 @@ CREATE TABLE IF NOT EXISTS shopping_checks (
   PRIMARY KEY (cycle_id, ingredient_id)
 );
 
+-- Things bought every cycle that aren't meal ingredients: cleaning, self
+-- care, snacks & drinks, pet food. monthly_qty is how many units go on each
+-- cycle's shopping list; 0 keeps the item in the catalog but off the list.
+CREATE TABLE IF NOT EXISTS household_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE,
+  category TEXT NOT NULL,
+  unit TEXT NOT NULL,
+  estimated_price REAL NOT NULL CHECK (estimated_price >= 0),
+  monthly_qty REAL NOT NULL DEFAULT 1 CHECK (monthly_qty >= 0)
+);
+
+-- Ticked-off state of household items on a cycle's shopping list.
+CREATE TABLE IF NOT EXISTS household_checks (
+  cycle_id INTEGER NOT NULL REFERENCES menu_cycles(id) ON DELETE CASCADE,
+  item_id INTEGER NOT NULL REFERENCES household_items(id) ON DELETE CASCADE,
+  PRIMARY KEY (cycle_id, item_id)
+);
+
+-- Items marked on the shopping list as "shelf price differs" so a parent
+-- remembers to update them at home. Saving the item's edit form clears it.
+CREATE TABLE IF NOT EXISTS price_flags (
+  ingredient_id INTEGER PRIMARY KEY REFERENCES ingredients(id) ON DELETE CASCADE,
+  flagged_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS household_price_flags (
+  item_id INTEGER PRIMARY KEY REFERENCES household_items(id) ON DELETE CASCADE,
+  flagged_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS feedback (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
