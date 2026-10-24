@@ -233,6 +233,7 @@ $weekRange = cycle_label($thisWeek[0], end($thisWeek));
         <p class="hint" style="margin-bottom:0.75rem;">Tap <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/></svg> to swap a meal that isn't cooked yet with an earlier one.</p>
       <?php endif; ?>
 
+      <div class="week-days">
       <?php foreach ($thisWeek as $i => $date): ?>
         <?php $d = new DateTimeImmutable($date); ?>
         <div class="day-row <?= $date === $today ? 'is-today' : '' ?>">
@@ -273,13 +274,16 @@ $weekRange = cycle_label($thisWeek[0], end($thisWeek));
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                 Add <?= $slot ?>
               </button>
+            <?php else: ?>
+              <div class="slot-line slot-line-blank"><span class="slot-tag"><?= ucfirst($slot) ?></span><span>—</span></div>
             <?php endif; ?>
           <?php endforeach; ?>
           <?php if (empty($byDate[$date]) && !$isParent): ?>
-            <p class="hint" style="margin:0.3rem 0;">Nothing planned yet.</p>
+            <p class="hint nothing-planned" style="margin:0.3rem 0;">Nothing planned yet.</p>
           <?php endif; ?>
         </div>
       <?php endforeach; ?>
+      </div>
     </main>
 
     <nav class="bottom-nav">

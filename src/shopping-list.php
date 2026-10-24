@@ -222,7 +222,9 @@ $budgetPct = $budget !== null && $budget > 0 ? min(100, ($totalCost / $budget) *
         <?php if ($section['heading'] !== null && !empty($section['byCategory'])): ?>
           <h3 class="section-heading"><?= htmlspecialchars($section['heading']) ?></h3>
         <?php endif; ?>
+        <div class="category-columns">
         <?php foreach ($section['byCategory'] as $category => $categoryItems): ?>
+          <div class="category-group">
           <div class="category-heading"><?= htmlspecialchars(ucfirst($category)) ?></div>
           <?php foreach ($categoryItems as $item): ?>
             <?php
@@ -255,7 +257,9 @@ $budgetPct = $budget !== null && $budget > 0 ? min(100, ($totalCost / $budget) *
               </div>
             <?php endif; ?>
           <?php endforeach; ?>
+          </div>
         <?php endforeach; ?>
+        </div>
       <?php endforeach; ?>
 
       <button type="button" class="btn btn-secondary" id="share-btn-2" style="margin-top:1rem;">

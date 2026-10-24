@@ -192,6 +192,7 @@ function render_meal_card(array $entry, array $favoriteMealIds, bool $guest, boo
         </a>
       </div>
 
+      <div class="today-slots">
       <?php foreach (['breakfast' => 'Breakfast', 'lunch' => 'Lunch', 'dinner' => 'Dinner'] as $slot => $label): ?>
         <div class="card" style="margin-bottom:1.1rem;">
           <div class="slot-label"><?= $label ?></div>
@@ -211,6 +212,7 @@ function render_meal_card(array $entry, array $favoriteMealIds, bool $guest, boo
           <?php endif; ?>
         </div>
       <?php endforeach; ?>
+      </div>
     </main>
 
     <nav class="bottom-nav">
