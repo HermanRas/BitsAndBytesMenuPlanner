@@ -1,4 +1,4 @@
-FROM php:8.3.21-cli-alpine3.20
+FROM php:8.3.36-cli-alpine
 
 # Install system dependencies
 RUN apk update && apk upgrade && \
